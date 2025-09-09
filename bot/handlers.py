@@ -1,6 +1,6 @@
 from telebot import TeleBot
 from telebot.types import Message
-from services.user_storage import add_user, update_user_group
+from services.user_storage import add_user, update_user_group, load_users
 
 def register_handlers(bot):
     @bot.message_handler(commands=["start"])
@@ -47,3 +47,30 @@ def register_handlers(bot):
         group = parts[1].strip()
         update_user_group(message.chat.id, group)
         bot.reply_to(message, f"✅ Группа сохранена: {group}")
+
+    @bot.message_handler(commands=["schedule"])
+    def schedule_handler(message: Message):
+        users = load_users()
+        chat_id = message.chat.id
+
+        user = next((u for u in users["users"] if u["chat_id"] == chat_id), None)
+
+        if not user:
+            bot.reply_to(message, "❌ Ты ещё не зарегистрирован. Напиши /start.")
+            return
+
+        if not user.get("group"):
+            bot.reply_to(message, "❌ У тебя не сохранена группа. Введи /setgroup <номер группы>.")
+            return
+
+        group = user["group"]
+
+        # заглушка расписания (потом на парсер)
+        schedule_text = (
+            f"📅 Расписание для группы {group}\n\n"
+            "09:00 — Математика\n"
+            "10:40 — Физика\n"
+            "12:30 — Программирование\n"
+        )
+
+        bot.reply_to(message, schedule_text)
