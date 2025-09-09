@@ -51,8 +51,16 @@ class Parser:
         # Close current session!
         if cache_config is None:
             cache_config = CacheConfig(enabled=True)
-        assert cache_config.enabled, "Caching should be enabled"
+        assert cache_config.enabled, f"Caching should be enabled! {cache_config}"
         self._set_session()
+
+    def prune_cache(self) -> None:
+        if isinstance(self._session, CachedSession):
+            self._session.cache.remove_expired_responses()
+
+    def clear_cache(self) -> None:
+        if isinstance(self._session, CachedSession):
+            self._session.cache.clear()
 
     def close(self) -> None:
         self._session.close()
