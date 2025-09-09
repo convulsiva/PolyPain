@@ -1,0 +1,54 @@
+from decouple import config
+from requests import Session as NotCachedSession
+from requests_cache import CachedSession
+from furl import furl
+from fake_useragent import UserAgent
+from typing import Final, Optional, Union
+from dataclasses import dataclass
+
+SessionLike = Union[NotCachedSession, CachedSession]
+
+
+@dataclass(frozen=True)
+class CacheConfig:
+    enabled: bool = False
+    ttl: int = -1  # Immortal cache
+    name: Optional[str] = None
+    backend: str = "sqlite"
+
+
+class Parser:
+    _UA: Final[UserAgent] = UserAgent()
+
+    def __init__(
+            self,
+            base_url: str,
+            parser_name: str,
+            cache_config: CacheConfig
+    ) -> None:
+        self._base_url = furl(base_url)
+        self._parser_name = parser_name
+        self._cache_config = cache_config
+        self._session: SessionLike = self._build_session()
+
+    def _build_session(self) -> SessionLike:
+        if self._cache_config.enabled:
+            return CachedSession(
+                self._cache_config.name or self._parser_name,
+                expire_after=self._cache_config.ttl
+            )
+        return NotCachedSession()
+
+    def close(self) -> None:
+        self._session.close()
+
+    def __enter__(self) -> "Parser":
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
+    def __repr__(self) -> str:
+        use_cache = "Yes" if self._cache_config.enabled else "No"
+        cache_tll = "immortal" if self._cache_config.ttl < 0 else self._cache_config.ttl
+        return f"<Parser object: {self._parser_name}, use_cache: {use_cache}, cache_tll: {cache_tll}>"
