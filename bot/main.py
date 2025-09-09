@@ -2,7 +2,7 @@ import telebot
 from config import Config
 import handlers
 
-bot = telebot.TeleBot(Config.BOT_TOKEN, parse_mode="HTML")
+bot = telebot.TeleBot(Config.BOT_TOKEN)
 
 handlers.register_handlers(bot)
 
