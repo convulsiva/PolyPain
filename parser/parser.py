@@ -75,6 +75,7 @@ class Parser(ABC):
         return BeautifulSoup(self._get_response(url).text, "lxml")
 
     def close(self) -> None:
+        self.prune_cache()
         self._session.close()
 
     def __enter__(self) -> "Parser":
