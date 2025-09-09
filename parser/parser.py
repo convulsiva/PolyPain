@@ -9,7 +9,7 @@ from dataclasses import dataclass
 SessionLike = Union[NotCachedSession, CachedSession]
 
 
-@dataclass(frozen=True)
+@dataclass
 class CacheConfig:
     enabled: bool = False
     ttl: int = -1  # Immortal cache
@@ -24,20 +24,35 @@ class Parser:
             self,
             base_url: str,
             parser_name: str,
-            cache_config: CacheConfig
+            cache_config: Optional[CacheConfig] = None
     ) -> None:
+        if cache_config is None: cache_config = CacheConfig()
         self._base_url = furl(base_url)
         self._parser_name = parser_name
         self._cache_config = cache_config
-        self._session: SessionLike = self._build_session()
+        self._session: Optional[SessionLike] = None
+        self._set_session()
 
-    def _build_session(self) -> SessionLike:
+    def _set_session(self) -> None:
+        if self._session is not None: self.close()
         if self._cache_config.enabled:
-            return CachedSession(
+            self._session = CachedSession(
                 self._cache_config.name or self._parser_name,
                 expire_after=self._cache_config.ttl
             )
-        return NotCachedSession()
+        self._session = NotCachedSession()
+
+    def disable_cache(self) -> None:
+        # Close current session!
+        self._cache_config.enabled = False
+        self._set_session()
+
+    def enable_cache(self, cache_config: Optional[CacheConfig] = None) -> None:
+        # Close current session!
+        if cache_config is None:
+            cache_config = CacheConfig(enabled=True)
+        assert cache_config.enabled, "Caching should be enabled"
+        self._set_session()
 
     def close(self) -> None:
         self._session.close()
