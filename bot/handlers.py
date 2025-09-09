@@ -1,6 +1,7 @@
 from telebot import TeleBot
 from telebot.types import Message
 from datetime import datetime, timedelta
+from keyboards import main_menu
 from services.user_storage import add_user, update_user_group, load_users
 
 def register_handlers(bot):
@@ -11,18 +12,72 @@ def register_handlers(bot):
             username=message.from_user.username,
             first_name=message.from_user.first_name
         )
-        bot.reply_to(message, (
+        bot.send_message(
+            message.chat.id,
             "👋 Привет! Я бот для расписания занятий Политеха.\n\n"
-            "Я могу:\n"
-            "📅 Показывать расписание твоей группы\n"
-            "✅ Сохранять группу, чтобы не вводить её каждый раз\n"
-            "ℹ️ Подсказать список команд\n\n"
-            "👉 Для начала укажи свою группу командой:\n"
-            "/setgroup <номер группы>\n"
-            "(например: /setgroup 3530901/00001)\n\n"
-            "Напиши /help, чтобы узнать все команды."
-        ))
+            "📅 Я могу показывать расписание твоей группы.\n"
+            "👉 Чтобы начать, сначала укажи свою группу:\n"
+            "/setgroup <номер группы>\n\n"
+            "Например: /setgroup 3530901/00001\n\n"
+            "После этого используй команды или кнопки:\n"
+            "— /today 📅 Сегодня\n"
+            "— /tomorrow 📆 Завтра\n"
+            "— /schedule 🗓 Всё расписание\n",
+            reply_markup=main_menu()
+        )
 
+    def get_today_text():
+        today = datetime.now().strftime("%A")
+        return f"📅 Сегодня {today}\n09:00 — Математика\n10:40 — Физика"
+
+    @bot.message_handler(commands=["today"])
+    def today_command(message: Message):
+        bot.reply_to(message, get_today_text())
+
+    @bot.message_handler(func=lambda msg: msg.text == "📅 Сегодня")
+    def today_button(message: Message):
+        bot.reply_to(message, get_today_text())
+
+    def get_tomorrow_text():
+        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%A")
+        return f"📅 Завтра {tomorrow}\n09:00 — Программирование\n10:40 — Английский"
+
+    @bot.message_handler(commands=["tomorrow"])
+    def tomorrow_command(message: Message):
+        bot.reply_to(message, get_tomorrow_text())
+
+    @bot.message_handler(func=lambda msg: msg.text == "📆 Завтра")
+    def tomorrow_button(message: Message):
+        bot.reply_to(message, get_tomorrow_text())
+
+    # 📌 SCHEDULE (stub)
+    def get_schedule_text(group: str):
+        return (
+            f"📅 Расписание для группы {group}\n\n"
+            "Понедельник:\n09:00 — Математика\n10:40 — Физика\n\n"
+            "Вторник:\n09:00 — Программирование\n10:40 — Английский\n\n"
+            "Среда:\n09:00 — Химия\n10:40 — История\n"
+        )
+
+    @bot.message_handler(commands=["schedule"])
+    def schedule_command(message: Message):
+        users = load_users()
+        chat_id = message.chat.id
+        user = next((u for u in users["users"] if u["chat_id"] == chat_id), None)
+
+        if not user:
+            bot.reply_to(message, "❌ Ты ещё не зарегистрирован. Напиши /start.")
+            return
+        if not user.get("group"):
+            bot.reply_to(message, "❌ У тебя не сохранена группа. Введи /setgroup <номер группы>.")
+            return
+
+        bot.reply_to(message, get_schedule_text(user["group"]))
+
+    @bot.message_handler(func=lambda msg: msg.text == "🗓 Всё расписание")
+    def schedule_button(message: Message):
+        # тут та же логика, что и для команды
+        schedule_command(message)
     @bot.message_handler(commands=["ping"])
     def ping_handler(message: Message):
         bot.reply_to(message, "pong 🏓")
@@ -50,39 +105,3 @@ def register_handlers(bot):
         update_user_group(message.chat.id, group)
         bot.reply_to(message, f"✅ Группа сохранена: {group}")
 
-    @bot.message_handler(commands=["schedule"])
-    def schedule_handler(message: Message):
-        users = load_users()
-        chat_id = message.chat.id
-
-        user = next((u for u in users["users"] if u["chat_id"] == chat_id), None)
-
-        if not user:
-            bot.reply_to(message, "❌ Ты ещё не зарегистрирован. Напиши /start.")
-            return
-
-        if not user.get("group"):
-            bot.reply_to(message, "❌ У тебя не сохранена группа. Введи /setgroup <номер группы>.")
-            return
-
-        group = user["group"]
-
-        # заглушка расписания (потом на парсер)
-        schedule_text = (
-            f"📅 Расписание для группы {group}\n\n"
-            "09:00 — Математика\n"
-            "10:40 — Физика\n"
-            "12:30 — Программирование\n"
-        )
-
-        bot.reply_to(message, schedule_text)
-
-    @bot.message_handler(commands=["today"])
-    def today_handler(message: Message):
-        today = datetime.now().strftime("%A")
-        bot.reply_to(message, f"📅 Сегодня {today}\n09:00 — Математика\n10:40 — Физика")
-
-    @bot.message_handler(commands=["tomorrow"])
-    def tomorrow_handler(message: Message):
-        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%A")
-        bot.reply_to(message, f"📅 Завтра {tomorrow}\n09:00 — Программирование\n10:40 — Английский")
