@@ -4,7 +4,18 @@ from datetime import datetime, timedelta
 from keyboards import main_menu
 from services.user_storage import add_user, update_user_group, load_users
 
-def register_handlers(bot):
+DAYS_RU = {
+    "Monday": "Понедельник",
+    "Tuesday": "Вторник",
+    "Wednesday": "Среда",
+    "Thursday": "Четверг",
+    "Friday": "Пятница",
+    "Saturday": "Суббота",
+    "Sunday": "Воскресенье",
+}
+
+
+def register_handlers(bot: TeleBot):
     @bot.message_handler(commands=["start"])
     def start_handler(message: Message):
         add_user(
@@ -26,8 +37,10 @@ def register_handlers(bot):
             reply_markup=main_menu()
         )
 
+    # ===== TODAY =====
     def get_today_text():
-        today = datetime.now().strftime("%A")
+        today_eng = datetime.now().strftime("%A")
+        today = DAYS_RU.get(today_eng, today_eng)
         return f"📅 Сегодня {today}\n09:00 — Математика\n10:40 — Физика"
 
     @bot.message_handler(commands=["today"])
@@ -38,8 +51,10 @@ def register_handlers(bot):
     def today_button(message: Message):
         bot.reply_to(message, get_today_text())
 
+    # ===== TOMORROW =====
     def get_tomorrow_text():
-        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%A")
+        tomorrow_eng = (datetime.now() + timedelta(days=1)).strftime("%A")
+        tomorrow = DAYS_RU.get(tomorrow_eng, tomorrow_eng)
         return f"📅 Завтра {tomorrow}\n09:00 — Программирование\n10:40 — Английский"
 
     @bot.message_handler(commands=["tomorrow"])
@@ -50,7 +65,7 @@ def register_handlers(bot):
     def tomorrow_button(message: Message):
         bot.reply_to(message, get_tomorrow_text())
 
-    # 📌 SCHEDULE (stub)
+    # ===== SCHEDULE =====
     def get_schedule_text(group: str):
         return (
             f"📅 Расписание для группы {group}\n\n"
@@ -59,8 +74,7 @@ def register_handlers(bot):
             "Среда:\n09:00 — Химия\n10:40 — История\n"
         )
 
-    @bot.message_handler(commands=["schedule"])
-    def schedule_command(message: Message):
+    def handle_schedule(message: Message):
         users = load_users()
         chat_id = message.chat.id
         user = next((u for u in users["users"] if u["chat_id"] == chat_id), None)
@@ -74,13 +88,22 @@ def register_handlers(bot):
 
         bot.reply_to(message, get_schedule_text(user["group"]))
 
+    @bot.message_handler(commands=["schedule"])
+    def schedule_command(message: Message):
+        handle_schedule(message)
+
     @bot.message_handler(func=lambda msg: msg.text == "🗓 Всё расписание")
     def schedule_button(message: Message):
-        # тут та же логика, что и для команды
-        schedule_command(message)
+        handle_schedule(message)
+
+
     @bot.message_handler(commands=["ping"])
     def ping_handler(message: Message):
         bot.reply_to(message, "pong 🏓")
+
+    @bot.message_handler(commands=["id"])
+    def id_handler(message: Message):
+        bot.reply_to(message, f"🆔 Твой chat_id: {message.chat.id}")
 
     @bot.message_handler(commands=["help"])
     def help_handler(message: Message):
@@ -88,6 +111,7 @@ def register_handlers(bot):
             "📖 Доступные команды:\n"
             "/start - приветствие и добавление в базу\n"
             "/ping - проверить, жив ли бот\n"
+            "/id - узнать свой chat_id\n"
             "/setgroup <номер> - сохранить свою группу\n"
             "/schedule - показать расписание\n"
             "/today - расписание на сегодня\n"
@@ -104,4 +128,3 @@ def register_handlers(bot):
         group = parts[1].strip()
         update_user_group(message.chat.id, group)
         bot.reply_to(message, f"✅ Группа сохранена: {group}")
-
