@@ -1,5 +1,5 @@
-from decouple import config
-from requests import Session as NotCachedSession
+from bs4 import BeautifulSoup
+from requests import Session as NotCachedSession, Response
 from requests_cache import CachedSession
 from furl import furl
 from fake_useragent import UserAgent
@@ -61,6 +61,14 @@ class Parser:
     def clear_cache(self) -> None:
         if isinstance(self._session, CachedSession):
             self._session.cache.clear()
+
+    def _get_response(self, url: str) -> Response:
+        response = self._session.get(self._base_url / url)
+        response.encoding = "utf-8"
+        return response
+
+    def _get_soup(self, url: str) -> BeautifulSoup:
+        return BeautifulSoup(self._get_response(url).text, "lxml")
 
     def close(self) -> None:
         self._session.close()
