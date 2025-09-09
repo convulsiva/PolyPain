@@ -3,7 +3,7 @@ from requests import Session as NotCachedSession, Response
 from requests_cache import CachedSession
 from furl import furl
 from fake_useragent import UserAgent
-from typing import Final, Optional, Union
+from typing import Final, Optional, Union, Any
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
@@ -18,8 +18,10 @@ class CacheConfig:
     backend: str = "sqlite"
 
 
+# Think about what attributes and methods to make private and not protected
+# add <file_name>.sqlite to .gitignore
 class Parser(ABC):
-    _UA: Final[UserAgent] = UserAgent()
+    _UA: Final[UserAgent] = UserAgent()  # Network requirement
 
     def __init__(
             self,
@@ -77,6 +79,10 @@ class Parser(ABC):
     def close(self) -> None:
         self.prune_cache()
         self._session.close()
+
+    # @abstractmethod
+    # def parse(self, *args: Any, **kwargs: Any) -> Any:
+    #     raise NotImplementedError
 
     def __enter__(self) -> "Parser":
         return self
