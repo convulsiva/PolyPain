@@ -1,5 +1,6 @@
 from telebot import TeleBot
 from telebot.types import Message
+from datetime import datetime, timedelta
 from services.user_storage import add_user, update_user_group, load_users
 
 def register_handlers(bot):
@@ -32,9 +33,10 @@ def register_handlers(bot):
             "📖 Доступные команды:\n"
             "/start - приветствие и добавление в базу\n"
             "/ping - проверить, жив ли бот\n"
-            "/help - список команд\n"
             "/setgroup <номер> - сохранить свою группу\n"
-            "/schedule - показать расписание (если указана группа)\n"
+            "/schedule - показать расписание\n"
+            "/today - расписание на сегодня\n"
+            "/tomorrow - расписание на завтра\n"
         ))
 
     @bot.message_handler(commands=["setgroup"])
@@ -74,3 +76,13 @@ def register_handlers(bot):
         )
 
         bot.reply_to(message, schedule_text)
+
+    @bot.message_handler(commands=["today"])
+    def today_handler(message: Message):
+        today = datetime.now().strftime("%A")
+        bot.reply_to(message, f"📅 Сегодня {today}\n09:00 — Математика\n10:40 — Физика")
+
+    @bot.message_handler(commands=["tomorrow"])
+    def tomorrow_handler(message: Message):
+        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%A")
+        bot.reply_to(message, f"📅 Завтра {tomorrow}\n09:00 — Программирование\n10:40 — Английский")
