@@ -18,10 +18,8 @@ class CacheConfig:
     backend: str = "sqlite"
 
 
-# Think about what attributes and methods to make private and not protected
-# add <file_name>.sqlite to .gitignore
 class Parser(ABC):
-    _UA: Final[UserAgent] = UserAgent()  # Network requirement
+    _UA: Final[UserAgent] = UserAgent()
 
     def __init__(
             self,
@@ -34,9 +32,9 @@ class Parser(ABC):
         self._parser_name = parser_name
         self._cache_config = cache_config
         self._session: Optional[SessionLike] = None
-        self._set_session()
+        self.__set_session()
 
-    def _set_session(self) -> None:
+    def __set_session(self) -> None:
         if self._session is not None: self.close()
         if self._cache_config.enabled:
             self._session = CachedSession(
@@ -49,7 +47,7 @@ class Parser(ABC):
     def disable_cache(self) -> None:
         # Close current session!
         self._cache_config.enabled = False
-        self._set_session()
+        self.__set_session()
 
     def enable_cache(self, cache_config: Optional[CacheConfig] = None) -> None:
         # Close current session!
@@ -57,7 +55,7 @@ class Parser(ABC):
             cache_config = CacheConfig(enabled=True)
         assert cache_config.enabled, f"Caching should be enabled! {cache_config}"
         self._cache_config = cache_config
-        self._set_session()
+        self.__set_session()
 
     def prune_cache(self) -> None:
         if isinstance(self._session, CachedSession):
@@ -67,9 +65,9 @@ class Parser(ABC):
         if isinstance(self._session, CachedSession):
             self._session.cache.clear()
 
-    def _get_response(self, url: str) -> Response:
-        # add timeout
-        response = self._session.get(self._base_url / url)
+    def _get_response(self, url: str, *args, **kwargs) -> Response:
+        url = (self._base_url / url).url
+        response = self._session.get(url, *args, **kwargs)
         response.encoding = "utf-8"
         return response
 
@@ -79,10 +77,6 @@ class Parser(ABC):
     def close(self) -> None:
         self.prune_cache()
         self._session.close()
-
-    # @abstractmethod
-    # def parse(self, *args: Any, **kwargs: Any) -> Any:
-    #     raise NotImplementedError
 
     def __enter__(self) -> "Parser":
         return self
