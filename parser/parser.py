@@ -158,6 +158,9 @@ class Parser(ABC):
         for c in jar:
             self._session.cookies.set_cookie(c)
 
+    def set_poxy(self): pass
+    def get_poxy(self): pass
+
     def _get_response(self, url: str, *args, **kwargs) -> Response:
         url = (self._base_url / url).url
         response = self._session.get(url, *args, **kwargs)
