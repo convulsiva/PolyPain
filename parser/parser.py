@@ -1,14 +1,17 @@
 from bs4 import BeautifulSoup
+from requests.cookies import RequestsCookieJar
 from urllib3.util.retry import Retry
 from requests import Session as NotCachedSession, Response
 from requests.adapters import HTTPAdapter
+from requests.utils import cookiejar_from_dict, dict_from_cookiejar
 from requests_cache import CachedSession
+from http.cookiejar import MozillaCookieJar, CookieJar
 from furl import furl
 from fake_useragent import UserAgent
-from typing import Final, Optional, Union, Any, Mapping
+from typing import Final, Optional, Union, Any, Mapping, FrozenSet
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from http.cookiejar import CookieJar
+from os.path import exists as path_exists
 
 SessionLike = Union[NotCachedSession, CachedSession]
 
@@ -27,7 +30,7 @@ class ParserNetConfig:
     retries_read: Optional[int] = None      # if None retries_read = retries_total
     backoff_factor: float = 0.5
     allowed_methods: tuple[str, ...] = ("GET", "HEAD")
-    status_forcelist: tuple[int, ...] = frozenset({429, 500, 502, 503, 504})
+    status_forcelist: FrozenSet[int, ...] = frozenset({429, 500, 502, 503, 504})
 
     headers: Mapping[str, str] = field(default_factory=dict)
     proxies: Mapping[str, str] = field(default_factory=dict)  # {"http": "...", "https": "..."}
@@ -78,6 +81,7 @@ class Parser(ABC):
         if self._cache_config.enabled:
             self._session = CachedSession(
                 cache_name=self._cache_config.name or self._parser_config.name,
+                backend=self._cache_config.backend,
                 expire_after=self._cache_config.ttl,
                 cache_control=self._cache_config.cache_control
             )
@@ -97,6 +101,7 @@ class Parser(ABC):
         ))
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
+        self.load_cookies()
 
     def disable_cache(self) -> None:
         # Close current session!
@@ -107,7 +112,7 @@ class Parser(ABC):
         # Close current session!
         if cache_config is None:
             cache_config = CacheConfig(enabled=True)
-        assert cache_config.enabled, f"Caching should be enabled! {cache_config}"
+        assert cache_config.enabled, f"Caching should be enabled! Now {cache_config = }"
         self._cache_config = cache_config
         self.__set_session()
 
@@ -119,8 +124,39 @@ class Parser(ABC):
         if isinstance(self._session, CachedSession):
             self._session.cache.clear()
 
-    # def _request(self, path: str, *, method: str = "GET", **kwargs) -> Response:
-    #     url = (self._base_url / path).url
+    def get_cookies(self) -> dict[str, str]:
+        assert self._session is not None, "Session is not setup!"
+        return dict_from_cookiejar(self._session.cookies)
+
+    def set_cookies(self, cookies: Union[Mapping[str, str], CookieJar, RequestsCookieJar]) -> None:
+        assert isinstance(cookies, (Mapping, CookieJar, RequestsCookieJar)), \
+            f"cookies must be Mapping[str, str] | CookieJar | RequestsCookieJar, Now type(cookies) = {type(cookies)}"
+        jar: RequestsCookieJar = self._session.cookies
+
+        if isinstance(cookies, Mapping):
+            jar.update(dict(cookies))
+        elif isinstance(cookies, RequestsCookieJar):
+            jar.update(cookies)
+        elif isinstance(cookies, CookieJar):
+            for c in cookies:
+                jar.set_cookie(c)
+
+
+    def save_cookies(self, file_path: Optional[str] = None) -> None:
+        file_path = file_path or self._cookie_config.file
+        assert file_path, "No cookie file path provided"
+        jar = MozillaCookieJar(file_path)
+        for c in self._session.cookies:
+            jar.set_cookie(c)
+        jar.save(ignore_discard=True, ignore_expires=True)
+
+    def load_cookies(self, file_path: Optional[str] = None) -> None:
+        file_path = file_path or self._cookie_config.file
+        if not file_path or not path_exists(file_path): return None
+        jar = MozillaCookieJar(file_path)
+        jar.load(ignore_discard=True, ignore_expires=True)
+        for c in jar:
+            self._session.cookies.set_cookie(c)
 
     def _get_response(self, url: str, *args, **kwargs) -> Response:
         url = (self._base_url / url).url
