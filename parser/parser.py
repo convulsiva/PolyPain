@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
+from urllib3.util.retry import Retry
 from requests import Session as NotCachedSession, Response
+from requests.adapters import HTTPAdapter
 from requests_cache import CachedSession
 from furl import furl
 from fake_useragent import UserAgent
@@ -48,6 +50,16 @@ class Parser(ABC):
             "User-Agent": str(self._UA.random),
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         })
+        adapter = HTTPAdapter(max_retries=Retry(
+            total=3,
+            connect=3,
+            read=3,
+            backoff_factor=0.5,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=("GET", "HEAD"),
+        ))
+        self._session.mount("http://", adapter)
+        self._session.mount("https://", adapter)
 
     def disable_cache(self) -> None:
         # Close current session!
