@@ -39,10 +39,15 @@ class Parser(ABC):
         if self._cache_config.enabled:
             self._session = CachedSession(
                 self._cache_config.name or self._parser_name,
-                expire_after=self._cache_config.ttl
+                expire_after=self._cache_config.ttl,
+                cache_control=True
             )
         else:
             self._session = NotCachedSession()
+        self._session.headers.update({
+            "User-Agent": str(self._UA.random),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        })
 
     def disable_cache(self) -> None:
         # Close current session!
