@@ -164,6 +164,7 @@ class Parser(ABC):
             jar.set_cookie(c)
         jar.save(ignore_discard=True, ignore_expires=True)
 
+    # Join set_cookies and load_cookies, add clear cookies
     def set_cookies(self, cookies: Union[Mapping[str, str], CookieJar, RequestsCookieJar]) -> None:
         assert isinstance(cookies, (Mapping, CookieJar, RequestsCookieJar)), \
             f"cookies must be Mapping[str, str] | CookieJar | RequestsCookieJar, Now type(cookies) = {type(cookies)}"
