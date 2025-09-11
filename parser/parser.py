@@ -16,10 +16,13 @@ from os.path import exists as path_exists
 SessionLike = Union[NotCachedSession, CachedSession]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class ParserCoreConfig:
-    base_url: str
+    base_url: furl
     name: str
+
+    def __post_init__(self):
+        self.base_url = furl(self.base_url).remove(fragment=True, args=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +69,7 @@ class Parser(ABC):
         if cache_config is None: cache_config = CacheConfig()
         if cookie_config is None: cookie_config = CookieConfig()
 
-        self._base_url = furl(parser_config.base_url).remove(fragment=True, args=True)
+        self._base_url = parser_config.base_url
 
         self._parser_config = parser_config
         self._net_config = net_config
@@ -139,20 +142,6 @@ class Parser(ABC):
         assert self._session is not None, "Session is not setup!"
         return dict_from_cookiejar(self._session.cookies)
 
-    def set_cookies(self, cookies: Union[Mapping[str, str], CookieJar, RequestsCookieJar]) -> None:
-        assert isinstance(cookies, (Mapping, CookieJar, RequestsCookieJar)), \
-            f"cookies must be Mapping[str, str] | CookieJar | RequestsCookieJar, Now type(cookies) = {type(cookies)}"
-        jar: RequestsCookieJar = self._session.cookies
-
-        if isinstance(cookies, Mapping):
-            jar.update(dict(cookies))
-        elif isinstance(cookies, RequestsCookieJar):
-            jar.update(cookies)
-        elif isinstance(cookies, CookieJar):
-            for c in cookies:
-                jar.set_cookie(c)
-
-
     def save_cookies(self, file_path: Optional[str] = None) -> None:
         file_path = file_path or self._cookie_config.file
         assert file_path, "No cookie file path provided"
@@ -160,6 +149,18 @@ class Parser(ABC):
         for c in self._session.cookies:
             jar.set_cookie(c)
         jar.save(ignore_discard=True, ignore_expires=True)
+
+    def set_cookies(self, cookies: Union[Mapping[str, str], CookieJar, RequestsCookieJar]) -> None:
+        assert isinstance(cookies, (Mapping, CookieJar, RequestsCookieJar)), \
+            f"cookies must be Mapping[str, str] | CookieJar | RequestsCookieJar, Now type(cookies) = {type(cookies)}"
+        jar: RequestsCookieJar = self._session.cookies
+        if isinstance(cookies, Mapping):
+            jar.update(dict(cookies))
+        elif isinstance(cookies, RequestsCookieJar):
+            jar.update(cookies)
+        elif isinstance(cookies, CookieJar):
+            for c in cookies:
+                jar.set_cookie(c)
 
     def load_cookies(self, file_path: Optional[str] = None) -> None:
         file_path = file_path or self._cookie_config.file
