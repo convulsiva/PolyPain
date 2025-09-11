@@ -87,10 +87,7 @@ class Parser(ABC):
             )
         else:
             self._session = NotCachedSession()
-        self._session.headers.update({
-            "User-Agent": self._UA.random if self._net_config.user_agent is None else self._net_config.user_agent,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        })
+        self.set_default_headers()
         adapter = HTTPAdapter(max_retries=Retry(
             total=self._net_config.retries_total,
             connect=self._net_config.retries_connect,
@@ -102,6 +99,20 @@ class Parser(ABC):
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
         self.load_cookies()
+
+    def set_default_headers(self, extra: Optional[dict] = None) -> None:
+        self._session.headers.update({
+            "User-Agent": self._UA.random if self._net_config.user_agent is None else self._net_config.user_agent,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        })
+        if extra:
+            self._session.headers.update(extra)
+
+    def get_default_headers(self, extra: Optional[dict] = None) -> dict[str, str]:
+        headers = dict(self._session.headers)
+        if extra:
+            headers.update(extra)
+        return headers
 
     def disable_cache(self) -> None:
         # Close current session!
