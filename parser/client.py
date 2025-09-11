@@ -17,7 +17,7 @@ SessionLike = Union[NotCachedSession, CachedSession]
 
 
 @dataclass(slots=True)
-class ParserCoreConfig:
+class ClientConfig:
     base_url: furl
     name: str
 
@@ -26,7 +26,7 @@ class ParserCoreConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class ParserNetConfig:
+class NetConfig:
     timeout: float = 5.0
     retries_total: int = 3
     retries_connect: Optional[int] = None   # if None retries_connect = retries_total
@@ -55,23 +55,23 @@ class CookieConfig:
     file: Optional[str] = None
 
 
-class Parser(ABC):
+class Client(ABC):
     _UA: Final[UserAgent] = UserAgent()
 
     def __init__(
             self,
-            parser_config: ParserCoreConfig,
-            net_config: Optional[ParserNetConfig] = None,
+            client_config: ClientConfig,
+            net_config: Optional[NetConfig] = None,
             cache_config: Optional[CacheConfig] = None,
             cookie_config: Optional[CookieConfig] = None
     ) -> None:
-        if net_config is None: net_config = ParserNetConfig()
+        if net_config is None: net_config = NetConfig()
         if cache_config is None: cache_config = CacheConfig()
         if cookie_config is None: cookie_config = CookieConfig()
 
-        self._base_url = parser_config.base_url
+        self._base_url = client_config.base_url
 
-        self._parser_config = parser_config
+        self._client_config = client_config
         self._net_config = net_config
         self._cache_config = cache_config
         self._cookie_config = cookie_config
@@ -83,7 +83,7 @@ class Parser(ABC):
         if self._session is not None: self.close()
         if self._cache_config.enabled:
             self._session = CachedSession(
-                cache_name=self._cache_config.name or self._parser_config.name,
+                cache_name=self._cache_config.name or self._client_config.name,
                 backend=self._cache_config.backend,
                 expire_after=self._cache_config.ttl,
                 cache_control=self._cache_config.cache_control
@@ -201,7 +201,7 @@ class Parser(ABC):
         self.prune_cache()
         self._session.close()
 
-    def __enter__(self) -> "Parser":
+    def __enter__(self) -> "Client":
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -210,4 +210,4 @@ class Parser(ABC):
     def __repr__(self) -> str:
         use_cache = "Yes" if self._cache_config.enabled else "No"
         cache_ttl = "immortal" if self._cache_config.ttl < 0 else self._cache_config.ttl
-        return f"<Parser object: {self._parser_config.name}, use_cache: {use_cache}, cache_ttl: {cache_ttl}>"
+        return f"<Client object: {self._client_config.name}, use_cache: {use_cache}, cache_ttl: {cache_ttl}>"
