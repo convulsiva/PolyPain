@@ -33,7 +33,7 @@ class ParserNetConfig:
     retries_read: Optional[int] = None      # if None retries_read = retries_total
     backoff_factor: float = 0.5
     allowed_methods: tuple[str, ...] = ("GET", "HEAD")
-    status_forcelist: FrozenSet[int, ...] = frozenset({429, 500, 502, 503, 504})
+    status_forcelist: FrozenSet[int] = frozenset({429, 500, 502, 503, 504})
 
     headers: Mapping[str, str] = field(default_factory=dict)
     proxies: Mapping[str, str] = field(default_factory=dict)  # {"http": "...", "https": "..."}
@@ -91,17 +91,31 @@ class Parser(ABC):
         else:
             self._session = NotCachedSession()
         self.set_default_headers()
-        adapter = HTTPAdapter(max_retries=Retry(
+        self._set_adapter(self._get_retry_adapter())
+        self.load_cookies()
+
+    def _get_retry_adapter(self) -> HTTPAdapter:
+        return HTTPAdapter(max_retries=Retry(
             total=self._net_config.retries_total,
             connect=self._net_config.retries_connect,
             read=self._net_config.retries_read,
             backoff_factor=self._net_config.backoff_factor,
             status_forcelist=self._net_config.status_forcelist,
             allowed_methods=self._net_config.allowed_methods,
+            respect_retry_after_header=True,
+            raise_on_status=False
         ))
+
+    def _set_adapter(self, adapter: HTTPAdapter) -> None:
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
-        self.load_cookies()
+
+    def _clear_adapters(self) -> None:
+        for adapter in self._session.adapters.values():
+            adapter.close()
+        self._session.adapters.clear()
+        self._session.mount("http://", HTTPAdapter())
+        self._session.mount("https://", HTTPAdapter())
 
     def set_default_headers(self, extra: Optional[dict] = None) -> None:
         self._session.headers.update({
