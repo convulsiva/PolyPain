@@ -12,5 +12,6 @@ bot = telebot.TeleBot(Config.BOT_TOKEN)
 handlers.register_handlers(bot)
 
 if __name__ == "__main__":
-    logger.info(" Бот запущен...")
+    # TODO: ADD TRY EXCEPT
     bot.infinity_polling()
+    logger.info(" Бот запущен...")
