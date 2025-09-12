@@ -2,12 +2,12 @@ from requests.cookies import RequestsCookieJar
 from urllib3.util.retry import Retry
 from requests import Session as NotCachedSession, Response
 from requests.adapters import HTTPAdapter
-from requests.utils import cookiejar_from_dict, dict_from_cookiejar
+from requests.utils import dict_from_cookiejar
 from requests_cache import CachedSession
 from http.cookiejar import MozillaCookieJar, CookieJar
 from furl import furl
 from fake_useragent import UserAgent
-from typing import Final, Optional, Union, Any, Mapping, FrozenSet
+from typing import Final, Optional, Union, Mapping, FrozenSet
 from dataclasses import dataclass, field
 from abc import ABC
 from os import PathLike
