@@ -37,8 +37,8 @@ class NetConfig:
     allowed_methods: tuple[str, ...] = ("GET", "HEAD")
     status_forcelist: FrozenSet[int] = frozenset({429, 500, 502, 503, 504})
 
-    headers: Mapping[str, str] = field(default_factory=dict)
-    proxies: Mapping[str, str] = field(default_factory=dict)  # {"http": "...", "https": "..."}
+    headers: dict[str, str] = field(default_factory=dict)
+    proxies: dict[str, str] = field(default_factory=dict)  # {"http": "...", "https": "..."}
     user_agent: Optional[str] = None  # if None use random user agent
 
 
@@ -166,6 +166,8 @@ class Client(ABC):
     def save_cookies(self, file_path: Optional[str] = None) -> None:
         file_path = file_path or self._cookie_config.file
         assert file_path, "No cookie file path provided"
+        path = Path(file_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
         jar = MozillaCookieJar(file_path)
         for c in self._session.cookies:
             jar.set_cookie(c)
@@ -214,8 +216,8 @@ class Client(ABC):
         assert self._session is not None, "Session is not setup!"
         return dict(self._session.proxies)
 
-    def _get_soup(self, url: str) -> BeautifulSoup:
-        return BeautifulSoup(self._get_response(url).text, "lxml")
+    def _get_soup(self, response: Response) -> BeautifulSoup:
+        return BeautifulSoup(response.text, "lxml")
 
     def close(self) -> None:
         self.prune_cache()
