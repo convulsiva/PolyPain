@@ -12,6 +12,8 @@ from typing import Final, Optional, Union, Any, Mapping, FrozenSet
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from os.path import exists as path_exists
+from os import PathLike
+from pathlib import Path
 
 SessionLike = Union[NotCachedSession, CachedSession]
 
@@ -25,7 +27,7 @@ class ClientConfig:
         self.base_url = furl(self.base_url).remove(fragment=True, args=True)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class NetConfig:
     timeout: float = 5.0
     retries_total: int = 3
@@ -49,10 +51,10 @@ class CacheConfig:
     backend: str = "sqlite"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class CookieConfig:
     initial: Optional[Union[Mapping[str, str], CookieJar]] = None
-    file: Optional[str] = None
+    file: Optional[Union[PathLike[str], str]] = None
 
 
 class Client(ABC):
@@ -92,7 +94,11 @@ class Client(ABC):
             self._session = NotCachedSession()
         self.set_default_headers()
         self._set_adapter(self._get_retry_adapter())
-        self.load_cookies()
+        if self._cookie_config.file:
+            self.update_cookies(self._cookie_config.file)
+        if self._cookie_config.initial:
+            self.update_cookies(self._cookie_config.initial)
+
 
     def _get_retry_adapter(self) -> HTTPAdapter:
         return HTTPAdapter(max_retries=Retry(
@@ -164,11 +170,14 @@ class Client(ABC):
             jar.set_cookie(c)
         jar.save(ignore_discard=True, ignore_expires=True)
 
-    # Join set_cookies and load_cookies, add clear cookies
-    def set_cookies(self, cookies: Union[Mapping[str, str], CookieJar, RequestsCookieJar]) -> None:
-        assert isinstance(cookies, (Mapping, CookieJar, RequestsCookieJar)), \
-            f"cookies must be Mapping[str, str] | CookieJar | RequestsCookieJar, Now type(cookies) = {type(cookies)}"
+    def update_cookies(
+            self,
+            cookies: Union[Mapping[str, str], CookieJar, RequestsCookieJar, PathLike[str], str, None] = None,
+            clear_current_cookies: bool = False,
+    ) -> None:
         jar: RequestsCookieJar = self._session.cookies
+        if clear_current_cookies: self.clear_cookies()
+        if cookies is None: return None
         if isinstance(cookies, Mapping):
             jar.update(dict(cookies))
         elif isinstance(cookies, RequestsCookieJar):
@@ -176,14 +185,17 @@ class Client(ABC):
         elif isinstance(cookies, CookieJar):
             for c in cookies:
                 jar.set_cookie(c)
-
-    def load_cookies(self, file_path: Optional[str] = None) -> None:
-        file_path = file_path or self._cookie_config.file
-        if not file_path or not path_exists(file_path): return None
-        jar = MozillaCookieJar(file_path)
-        jar.load(ignore_discard=True, ignore_expires=True)
-        for c in jar:
-            self._session.cookies.set_cookie(c)
+        elif isinstance(cookies, (PathLike, str)):
+            path = Path(cookies)
+            assert path.exists(), f"The path to the file does not exist. Now {cookies = }"
+            file_jar = MozillaCookieJar(str(path))
+            file_jar.load(ignore_discard=True, ignore_expires=True)
+            for c in file_jar:
+                jar.set_cookie(c)
+        else:
+            raise TypeError(
+                f"Cookies must be Mapping[str, str] | CookieJar | RequestsCookieJar | PathLike[str], got {type(cookies)}"
+            )
 
     def set_poxy(self): pass
     def get_poxy(self): pass
