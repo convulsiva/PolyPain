@@ -12,5 +12,8 @@ bot = telebot.TeleBot(Config.BOT_TOKEN)
 handlers.register_handlers(bot)
 
 if __name__ == "__main__":
-    logger.info(" Бот запущен...")
-    bot.infinity_polling()
+    try:
+        logger.info("🚀 Бот запускается...")
+        bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    except Exception:
+        logger.exception("❌ Критическая ошибка при работе бота")
