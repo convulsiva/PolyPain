@@ -3,6 +3,7 @@ from telebot.types import Message
 from datetime import datetime, timedelta
 from keyboards import main_menu
 from services.user_storage import add_user, update_user_group, load_users
+import re
 
 DAYS_RU = {
     "Monday": "Понедельник",
@@ -29,7 +30,7 @@ def register_handlers(bot: TeleBot):
             "📅 Я могу показывать расписание твоей группы.\n"
             "👉 Чтобы начать, сначала укажи свою группу:\n"
             "/setgroup <номер группы>\n\n"
-            "Например: /setgroup 3530901/00001\n\n"
+            "Например: /setgroup 5130902/40003 \n\n"
             "После этого используй команды или кнопки:\n"
             "— /today 📅 Сегодня\n"
             "— /tomorrow 📆 Завтра\n"
@@ -37,7 +38,7 @@ def register_handlers(bot: TeleBot):
             reply_markup=main_menu()
         )
 
-    # ===== TODAY =====
+    # TODAY
     def get_today_text():
         today_eng = datetime.now().strftime("%A")
         today = DAYS_RU.get(today_eng, today_eng)
@@ -51,7 +52,7 @@ def register_handlers(bot: TeleBot):
     def today_button(message: Message):
         bot.reply_to(message, get_today_text())
 
-    # ===== TOMORROW =====
+    # TOMORROW
     def get_tomorrow_text():
         tomorrow_eng = (datetime.now() + timedelta(days=1)).strftime("%A")
         tomorrow = DAYS_RU.get(tomorrow_eng, tomorrow_eng)
@@ -126,5 +127,10 @@ def register_handlers(bot: TeleBot):
             return
 
         group = parts[1].strip()
+
+        if not re.fullmatch(r"\d+/\d+", group):
+            bot.reply_to(message, "❌ Неверный формат группы. Пример: 5130902/40003")
+            return
+
         update_user_group(message.chat.id, group)
         bot.reply_to(message, f"✅ Группа сохранена: {group}")
