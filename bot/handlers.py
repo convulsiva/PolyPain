@@ -3,18 +3,8 @@ from telebot.types import Message
 from datetime import datetime, timedelta
 from keyboards import main_menu
 from services.user_storage import add_user, update_user_group, load_users
+from texts import START_MESSAGE, HELP_MESSAGE, INVALID_GROUP_FORMAT, GROUP_SAVED, NOT_REGISTERED, NO_GROUP, PING, DAYS_RU
 import re
-
-DAYS_RU = {
-    "Monday": "Понедельник",
-    "Tuesday": "Вторник",
-    "Wednesday": "Среда",
-    "Thursday": "Четверг",
-    "Friday": "Пятница",
-    "Saturday": "Суббота",
-    "Sunday": "Воскресенье",
-}
-
 
 def register_handlers(bot: TeleBot):
     @bot.message_handler(commands=["start"])
@@ -24,19 +14,7 @@ def register_handlers(bot: TeleBot):
             username=message.from_user.username,
             first_name=message.from_user.first_name
         )
-        bot.send_message(
-            message.chat.id,
-            "👋 Привет! Я бот для расписания занятий Политеха.\n\n"
-            "📅 Я могу показывать расписание твоей группы.\n"
-            "👉 Чтобы начать, сначала укажи свою группу:\n"
-            "/setgroup <номер группы>\n\n"
-            "Например: /setgroup 5130902/40003 \n\n"
-            "После этого используй команды или кнопки:\n"
-            "— /today 📅 Сегодня\n"
-            "— /tomorrow 📆 Завтра\n"
-            "— /schedule 🗓 Всё расписание\n",
-            reply_markup=main_menu()
-        )
+        bot.send_message(message.chat.id, START_MESSAGE, reply_markup=main_menu())
 
     # TODAY
     def get_today_text():
@@ -81,10 +59,10 @@ def register_handlers(bot: TeleBot):
         user = next((u for u in users["users"] if u["chat_id"] == chat_id), None)
 
         if not user:
-            bot.reply_to(message, "❌ Ты ещё не зарегистрирован. Напиши /start.")
+            bot.reply_to(message, NOT_REGISTERED)
             return
         if not user.get("group"):
-            bot.reply_to(message, "❌ У тебя не сохранена группа. Введи /setgroup <номер группы>.")
+            bot.reply_to(message, NO_GROUP)
             return
 
         bot.reply_to(message, get_schedule_text(user["group"]))
@@ -100,7 +78,7 @@ def register_handlers(bot: TeleBot):
 
     @bot.message_handler(commands=["ping"])
     def ping_handler(message: Message):
-        bot.reply_to(message, "pong 🏓")
+        bot.reply_to(message, PING)
 
     @bot.message_handler(commands=["id"])
     def id_handler(message: Message):
@@ -108,16 +86,7 @@ def register_handlers(bot: TeleBot):
 
     @bot.message_handler(commands=["help"])
     def help_handler(message: Message):
-        bot.reply_to(message, (
-            "📖 Доступные команды:\n"
-            "/start - приветствие и добавление в базу\n"
-            "/ping - проверить, жив ли бот\n"
-            "/id - узнать свой chat_id\n"
-            "/setgroup <номер> - сохранить свою группу\n"
-            "/schedule - показать расписание\n"
-            "/today - расписание на сегодня\n"
-            "/tomorrow - расписание на завтра\n"
-        ))
+        bot.reply_to(message, HELP_MESSAGE)
 
     @bot.message_handler(commands=["setgroup"])
     def setgroup_handler(message: Message):
@@ -129,8 +98,10 @@ def register_handlers(bot: TeleBot):
         group = parts[1].strip()
 
         if not re.fullmatch(r"\d+/\d+", group):
-            bot.reply_to(message, "❌ Неверный формат группы. Пример: 5130902/40003")
+            bot.reply_to(message, INVALID_GROUP_FORMAT)
             return
 
         update_user_group(message.chat.id, group)
-        bot.reply_to(message, f"✅ Группа сохранена: {group}")
+        bot.reply_to(message, GROUP_SAVED.format(group=group))
+
+
