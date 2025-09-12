@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 from requests.cookies import RequestsCookieJar
 from urllib3.util.retry import Retry
 from requests import Session as NotCachedSession, Response
@@ -10,8 +9,7 @@ from furl import furl
 from fake_useragent import UserAgent
 from typing import Final, Optional, Union, Any, Mapping, FrozenSet
 from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
-from os.path import exists as path_exists
+from abc import ABC
 from os import PathLike
 from pathlib import Path
 
@@ -215,9 +213,6 @@ class Client(ABC):
     def get_proxies(self) -> dict[str, str]:
         assert self._session is not None, "Session is not setup!"
         return dict(self._session.proxies)
-
-    def _get_soup(self, response: Response) -> BeautifulSoup:
-        return BeautifulSoup(response.text, "lxml")
 
     def close(self) -> None:
         self.prune_cache()
