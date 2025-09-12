@@ -192,6 +192,7 @@ class Client(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
 
+    # Mb add configs info in future
     def __repr__(self) -> str:
         use_cache = "Yes" if self._cache_config.enabled else "No"
         cache_ttl = "immortal" if self._cache_config.ttl < 0 else self._cache_config.ttl
