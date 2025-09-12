@@ -3,7 +3,7 @@ from telebot.types import Message
 from datetime import datetime, timedelta
 from keyboards import main_menu
 from services.user_storage import add_user, update_user_group, load_users
-from texts import START_MESSAGE, HELP_MESSAGE, INVALID_GROUP_FORMAT, GROUP_SAVED, NOT_REGISTERED, NO_GROUP, PING, DAYS_RU
+from texts import START_MESSAGE, HELP_MESSAGE, INVALID_GROUP_FORMAT, GROUP_SAVED, NOT_REGISTERED, NO_GROUP, PING, DAYS_RU, UNKNOWN_COMMAND, SETGROUP_INSTRUCTION
 import re
 
 def register_handlers(bot: TeleBot):
@@ -75,7 +75,6 @@ def register_handlers(bot: TeleBot):
     def schedule_button(message: Message):
         handle_schedule(message)
 
-
     @bot.message_handler(commands=["ping"])
     def ping_handler(message: Message):
         bot.reply_to(message, PING)
@@ -92,7 +91,7 @@ def register_handlers(bot: TeleBot):
     def setgroup_handler(message: Message):
         parts = message.text.split(maxsplit=1)
         if len(parts) < 2:
-            bot.reply_to(message, "❌ Использование: /setgroup <номер группы>")
+            bot.reply_to(message, SETGROUP_INSTRUCTION)
             return
 
         group = parts[1].strip()
@@ -104,4 +103,6 @@ def register_handlers(bot: TeleBot):
         update_user_group(message.chat.id, group)
         bot.reply_to(message, GROUP_SAVED.format(group=group))
 
-
+    @bot.message_handler(func=lambda msg: True)
+    def fallback_handler(message: Message):
+        bot.reply_to(message, UNKNOWN_COMMAND)
