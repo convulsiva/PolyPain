@@ -197,6 +197,12 @@ class Client(ABC):
                 f"Cookies must be Mapping[str, str] | CookieJar | RequestsCookieJar | PathLike[str], got {type(cookies)}"
             )
 
+    def clear_cookies(self,
+                      domain: Optional[str] = None,
+                      path: Optional[str] = None,
+                      name: Optional[str] = None) -> None:
+        self._session.cookies.clear(domain, path, name)
+
     def set_poxy(self): pass
     def get_poxy(self): pass
 
