@@ -218,6 +218,14 @@ class Client(ABC):
         self.prune_cache()
         self._session.close()
 
+    def _request(self, method: str, url: str, **kwargs) -> Response:
+        assert self._session is not None, "Session is not setup!"
+        url = (self._base_url / url).url
+        kwargs.setdefault("timeout", self._net_config.timeout)
+        response = self._session.request(method, url, **kwargs)
+        response.encoding = "utf-8"
+        return response
+
     def __enter__(self) -> "Client":
         return self
 
