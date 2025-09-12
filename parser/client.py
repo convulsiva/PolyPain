@@ -121,7 +121,7 @@ class Client(ABC):
         assert self._session is not None, "Session is not setup!"
         return dict_from_cookiejar(self._session.cookies)
 
-    def save_cookies(self, file_path: Optional[str] = None) -> None:
+    def save_cookies(self, file_path: PathLike[str] = None) -> None:
         file_path = file_path or self._cookie_config.file
         assert file_path, "No cookie file path provided"
         path = Path(file_path)
