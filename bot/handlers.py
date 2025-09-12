@@ -104,5 +104,17 @@ def register_handlers(bot: TeleBot):
         bot.reply_to(message, GROUP_SAVED.format(group=group))
 
     @bot.message_handler(func=lambda msg: True)
+    def easter_egg_handler(message: Message):
+        text = message.text.lower()
+
+        triggers = ["serega pirat", "серега пират", "пират"]
+
+        if any(trigger in text for trigger in triggers):
+            bot.send_sticker(
+                message.chat.id,
+                "CAACAgIAAxkBAAOcaMR5j0knrqDF0s1lONeOhEY2syYAAvsYAAIRSwhLT7Bhl6t0YIo2BA"
+            )
+
+    @bot.message_handler(func=lambda msg: True)
     def fallback_handler(message: Message):
         bot.reply_to(message, UNKNOWN_COMMAND)
