@@ -98,7 +98,8 @@ class Client(ABC):
             self.update_cookies(self._cookie_config.file)
         if self._cookie_config.initial:
             self.update_cookies(self._cookie_config.initial)
-
+        if self._net_config.proxies:
+            self.set_proxies(self._net_config.proxies)
 
     def _get_retry_adapter(self) -> HTTPAdapter:
         return HTTPAdapter(max_retries=Retry(
@@ -203,14 +204,15 @@ class Client(ABC):
                       name: Optional[str] = None) -> None:
         self._session.cookies.clear(domain, path, name)
 
-    def set_poxy(self): pass
-    def get_poxy(self): pass
+    def set_proxies(self, proxies: Mapping[str, str]):
+        assert self._session is not None, "Session is not setup!"
+        proxies = dict(proxies)
+        self._session.proxies.update(proxies)
+        self._net_config.proxies = proxies
 
-    def _get_response(self, url: str, *args, **kwargs) -> Response:
-        url = (self._base_url / url).url
-        response = self._session.get(url, *args, **kwargs)
-        response.encoding = "utf-8"
-        return response
+    def get_proxies(self) -> dict[str, str]:
+        assert self._session is not None, "Session is not setup!"
+        return dict(self._session.proxies)
 
     def _get_soup(self, url: str) -> BeautifulSoup:
         return BeautifulSoup(self._get_response(url).text, "lxml")
