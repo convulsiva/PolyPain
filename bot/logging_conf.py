@@ -1,5 +1,14 @@
 import logging
 import sys
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+LOG_FILE_NAME = os.getenv("LOG_FILE_NAME", "logs/bot.log")
+
+Path(LOG_FILE_NAME).parent.mkdir(parents=True, exist_ok=True)
 
 COLORS = {
     "DEBUG": "\033[90m",
@@ -25,7 +34,7 @@ def setup_logging():
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(ColorFormatter(log_format, datefmt=date_format))
 
-    file_handler = logging.FileHandler("bot.log", encoding="utf-8")
+    file_handler = logging.FileHandler(LOG_FILE_NAME, encoding="utf-8")
     file_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
 
     logging.basicConfig(
