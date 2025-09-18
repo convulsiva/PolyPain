@@ -1,7 +1,8 @@
 import json
 import os
+from config import Config
 
-FILE_PATH = "storage/users.json"
+FILE_PATH = Config.USER_FILE_PATH
 
 def load_users():
     if not os.path.exists(FILE_PATH):
@@ -9,12 +10,10 @@ def load_users():
     with open(FILE_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def save_users(data):
     os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
     with open(FILE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-
 
 def add_user(chat_id: int, username: str = None, first_name: str = None):
     data = load_users()
@@ -28,7 +27,6 @@ def add_user(chat_id: int, username: str = None, first_name: str = None):
             "group": None
         })
         save_users(data)
-
 
 def update_user_group(chat_id: int, group: str):
     data = load_users()
