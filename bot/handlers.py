@@ -3,7 +3,7 @@ from telebot.types import Message
 from datetime import datetime, timedelta
 from keyboards import main_menu
 from services.user_storage import add_user, update_user_group, load_users
-from texts import START_MESSAGE, HELP_MESSAGE, INVALID_GROUP_FORMAT, GROUP_SAVED, NOT_REGISTERED, NO_GROUP, PING, DAYS_RU, UNKNOWN_COMMAND, SETGROUP_INSTRUCTION
+from bot.texts import START_MESSAGE, HELP_MESSAGE, INVALID_GROUP_FORMAT, GROUP_SAVED, NOT_REGISTERED, NO_GROUP, PING, DAYS_RU, UNKNOWN_COMMAND, SETGROUP_INSTRUCTION
 import re
 
 def register_handlers(bot: TeleBot):
@@ -55,8 +55,8 @@ def register_handlers(bot: TeleBot):
 
     def handle_schedule(message: Message):
         users = load_users()
-        chat_id = message.chat.id
-        user = next((u for u in users["users"] if u["chat_id"] == chat_id), None)
+        chat_id = str(message.chat.id)
+        user = users.get(chat_id)
 
         if not user:
             bot.reply_to(message, NOT_REGISTERED)

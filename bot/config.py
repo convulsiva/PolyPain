@@ -9,3 +9,4 @@ class Config:
     PARSER_BASE_URL: str = os.getenv("PARSER_BASE_URL", "")
     ENV: str = os.getenv("ENV", "dev")
     USER_FILE_PATH: str = os.getenv("USER_FILE_PATH", "storage/users.json")
+
