@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 LOG_FILE_NAME = os.getenv("LOG_FILE_NAME", "logs/bot.log")
+LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+DATE_FORMAT = os.getenv("DATE_FORMAT", "%Y-%m-%d %H:%M:%S")
 
 Path(LOG_FILE_NAME).parent.mkdir(parents=True, exist_ok=True)
 
@@ -28,14 +30,11 @@ class ColorFormatter(logging.Formatter):
 
 
 def setup_logging():
-    log_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    date_format = "%Y-%m-%d %H:%M:%S"
-
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(ColorFormatter(log_format, datefmt=date_format))
+    console_handler.setFormatter(ColorFormatter(LOG_FORMAT, datefmt=DATE_FORMAT))
 
     file_handler = logging.FileHandler(LOG_FILE_NAME, encoding="utf-8")
-    file_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
+    file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT))
 
     logging.basicConfig(
         level=logging.INFO,
