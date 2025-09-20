@@ -1,0 +1,2 @@
+class CacheDisabledError(Exception): pass
+
