@@ -42,3 +42,11 @@ class CacheConfig:
 class CookieConfig:
     initial: Optional[Union[Mapping[str, str], CookieJar]] = None
     file: Optional[Union[PathLike[str], str]] = None
+
+
+class ConfigBox:
+    def __init__(self, client: ClientConfig, net: NetConfig, cache: CacheConfig, cookie: CookieConfig) -> None:
+        self.client = client
+        self.net = net
+        self.cache = cache
+        self.cookie = cookie
