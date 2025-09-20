@@ -50,6 +50,7 @@ class SessionManager:
     def switch_cache(self, new_cache_config: CacheConfig) -> None:
         self.session.close()
         self.session = SessionFactory.create(self.client_config, new_cache_config)
+        self.cache_config = new_cache_config
 
     def apply_retry(self, retry: Retry) -> None:
         adapter = HTTPAdapter(max_retries=retry)
