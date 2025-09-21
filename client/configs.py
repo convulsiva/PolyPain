@@ -45,7 +45,11 @@ class CookieConfig:
 
 
 class ConfigBox:
-    def __init__(self, client: ClientConfig, net: NetConfig, cache: CacheConfig, cookie: CookieConfig) -> None:
+    def __init__(self,
+                 client: ClientConfig,
+                 net: NetConfig,
+                 cache: CacheConfig,
+                 cookie: CookieConfig) -> None:
         self.client = client
         self.net = net
         self.cache = cache

@@ -2,7 +2,7 @@ from typing import Union, Optional, Mapping, Callable
 from requests_cache import CachedSession
 from requests import Session as NotCachedSession, Request, PreparedRequest, Response
 from requests.adapters import HTTPAdapter
-from configs import ClientConfig, NetConfig, CacheConfig, CookieConfig
+from configs import ConfigBox, ClientConfig, CacheConfig
 from urllib3.util.retry import Retry
 from type_defs import ProxyLike, SessionLike
 
@@ -22,17 +22,11 @@ class SessionFactory:
 
 class SessionManager:
     def __init__(self,
-                 client_config: ClientConfig,
-                 net_config: NetConfig,
-                 cache_config: CacheConfig,
-                 cookie_config: CookieConfig,
+                 configs: ConfigBox,
                  proxy_strategy: Callable[[str], ProxyLike]) -> None:
-        self.client_config = client_config
-        self.net_config = net_config
-        self.cache_config = cache_config
-        self.cookie_config = cookie_config
+        self._configs = configs
         self._proxy_strategy = proxy_strategy
-        self.session: Optional[SessionLike] = SessionFactory.create(client_config, cache_config)
+        self.session: Optional[SessionLike] = SessionFactory.create(configs.client, configs.cache)
 
     # ---------- lifecycle ----------
     def close(self) -> None:
@@ -49,8 +43,7 @@ class SessionManager:
     # ---------- configuration ----------
     def switch_cache(self, new_cache_config: CacheConfig) -> None:
         self.session.close()
-        self.session = SessionFactory.create(self.client_config, new_cache_config)
-        self.cache_config = new_cache_config
+        self.session = SessionFactory.create(self._configs.client, new_cache_config)
 
     def apply_retry(self, retry: Retry) -> None:
         adapter = HTTPAdapter(max_retries=retry)
@@ -94,6 +87,6 @@ class SessionManager:
              proxies: Optional[str, Mapping[str, str]] = None,
              **kwargs) -> Response:
         return self.session.send(request,
-                                 timeout=timeout or self.net_config.timeout,
+                                 timeout=timeout or self._configs.net.timeout,
                                  proxies=self._select_proxies(proxies, self._proxy_strategy(request.url)),
                                  **kwargs)
