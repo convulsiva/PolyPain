@@ -84,3 +84,16 @@ class CookieController(BaseController):
                       path: str | None = None,
                       name: str | None = None) -> None:
         self._session_manager.session.cookies.clear(domain, path, name)
+
+
+class HeadersController(BaseController, CaseInsensitiveDict):
+    _UA: Final[UserAgent] = UserAgent()
+
+    def __init__(self,
+                 session_manager: SessionManager,
+                 configs: ConfigBox) -> None:
+        super().__init__(session_manager, configs, session_manager.session.headers)
+
+    def set_random_ua(self):
+        self["User-Agent"] = self._UA.random
+
