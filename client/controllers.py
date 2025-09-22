@@ -97,3 +97,13 @@ class HeadersController(BaseController, CaseInsensitiveDict):
 
     def set_random_ua(self):
         self["User-Agent"] = self._UA.random
+
+
+class ProxyController(BaseController, dict):
+    # Think about the method of setting a proxy strategy
+    def __init__(self,
+                 session_manager: SessionManager,
+                 configs: ConfigBox) -> None:
+        super().__init__(session_manager, configs, session_manager.session.proxies)
+
+
