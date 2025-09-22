@@ -12,6 +12,9 @@ from http.cookiejar import MozillaCookieJar
 from requests.structures import CaseInsensitiveDict
 from fake_useragent import UserAgent
 
+# PROBLEM:
+# session_manager.session.cookies/headers/proxies when rebuilding the session, the links will go rotten. (
+
 
 class BaseController:
     def __init__(self,
