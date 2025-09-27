@@ -92,16 +92,33 @@ class CookieController(BaseController):
         self._cookies.clear(domain, path, name)
 
 
-class HeadersController(BaseController, CaseInsensitiveDict):
+class HeadersController(BaseController):
     _UA: Final[UserAgent] = UserAgent()
 
-    def __init__(self,
-                 session_manager: SessionManager,
-                 configs: ConfigBox) -> None:
-        super().__init__(session_manager, configs, session_manager.session.headers)
+    @property
+    def _headers(self) -> CaseInsensitiveDict:
+        return self._session_manager.session.headers
 
-    def set_random_ua(self):
-        self["User-Agent"] = self._UA.random
+    def get_all(self) -> dict[str, str]:
+        return dict(self._headers)
+
+    def get(self, name: str, default: str | None = None) -> str | None:
+        return self._headers.get(name, default)
+
+    def set(self, name: str, value: str) -> None:
+        self._headers[name] = value
+
+    def update(self, extra: Mapping[str, str] | None = None, **kwargs: str) -> None:
+        if extra:
+            self._headers.update(dict(extra))
+        if kwargs:
+            self._headers.update(kwargs)
+
+    def remove(self, name: str) -> None:
+        self._headers.pop(name, None)
+
+    def clear(self) -> None:
+        self._headers.clear()
 
 
 class ProxyController(BaseController, dict):
@@ -110,6 +127,3 @@ class ProxyController(BaseController, dict):
                  session_manager: SessionManager,
                  configs: ConfigBox) -> None:
         super().__init__(session_manager, configs, session_manager.session.proxies)
-
-
-
