@@ -47,8 +47,12 @@ class CacheController(BaseController):
 
 
 class CookieController(BaseController):
+    @property
+    def _cookies(self) -> RequestsCookieJar:
+        return self._session_manager.session.cookies
+
     def get(self) -> dict[str, str]:
-        return dict_from_cookiejar(self._session_manager.session.cookies)
+        return dict_from_cookiejar(self._cookies)
 
     def save(self, file_path: PathLike[str] | None = None) -> None:
         file_path = file_path or self._configs.cookie.file
@@ -57,14 +61,14 @@ class CookieController(BaseController):
         path = Path(file_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         jar = MozillaCookieJar(file_path)
-        for c in self._session_manager.session.cookies:
+        for c in self._cookies:
             jar.set_cookie(c)
         jar.save(ignore_discard=True, ignore_expires=True)
 
     def update(self,
                cookies: CookiesLike = None,
                clear_current_cookies: bool = False) -> None:
-        jar: RequestsCookieJar = self._session_manager.session.cookies
+        jar: RequestsCookieJar = self._cookies
         if clear_current_cookies: self.clear()
         if cookies is None: return None
         if isinstance(cookies, Mapping):
@@ -85,7 +89,8 @@ class CookieController(BaseController):
                       domain: str | None = None,
                       path: str | None = None,
                       name: str | None = None) -> None:
-        self._session_manager.session.cookies.clear(domain, path, name)
+        self._cookies.clear(domain, path, name)
+
 
 class HeadersController(BaseController, CaseInsensitiveDict):
     _UA: Final[UserAgent] = UserAgent()
