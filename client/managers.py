@@ -5,6 +5,7 @@ from requests.adapters import HTTPAdapter
 from configs import ConfigBox, ClientConfig, CacheConfig
 from urllib3.util.retry import Retry
 from type_defs import ProxyLike, SessionLike
+from exceptions import SwitchSessionError
 
 
 class SessionFactory:
@@ -42,8 +43,18 @@ class SessionManager:
 
     # ---------- configuration ----------
     def switch_cache(self, new_cache_config: CacheConfig) -> None:
-        self.session.close()
-        self.session = SessionFactory.create(self._configs.client, new_cache_config)
+        old = self.session
+        try:
+            new = SessionFactory.create(self._configs.client, new_cache_config)
+            new.headers.update(old.headers)
+            new.proxies.update(old.proxies)
+            new.cookies.update(old.cookies)
+            self.apply_retry(self._configs.net.retry)
+            self.session.close()
+            self.session = new
+        except Exception as err:
+            self.session = old
+            raise SwitchSessionError("A session change error occurred during a cache change") from err
 
     def apply_retry(self, retry: Retry) -> None:
         adapter = HTTPAdapter(max_retries=retry)
