@@ -53,7 +53,7 @@ class CookieController(BaseController):
     def save(self, file_path: PathLike[str] | None = None) -> None:
         file_path = file_path or self._configs.cookie.file
         if file_path is None:
-            raise FileNotFoundError("No cookie file path provided")
+            raise ValueError("No cookie file path provided")
         path = Path(file_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         jar = MozillaCookieJar(file_path)
