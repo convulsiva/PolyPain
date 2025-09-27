@@ -2,8 +2,8 @@ from os import PathLike
 from managers import SessionManager
 from configs import CacheConfig, ConfigBox
 from exceptions import CacheDisabledError
-from typing import Mapping, Any, Final
-from type_defs import CachedSession, NotCachedSession, CookiesLike
+from typing import Mapping, Any, Final, Callable
+from type_defs import CachedSession, NotCachedSession, CookiesLike, ProxyLike
 from http.cookiejar import CookieJar
 from requests.utils import dict_from_cookiejar
 from requests.cookies import RequestsCookieJar
@@ -121,9 +121,35 @@ class HeadersController(BaseController):
         self._headers.clear()
 
 
-class ProxyController(BaseController, dict):
-    # Think about the method of setting a proxy strategy
-    def __init__(self,
-                 session_manager: SessionManager,
-                 configs: ConfigBox) -> None:
-        super().__init__(session_manager, configs, session_manager.session.proxies)
+class ProxyController(BaseController):
+    @property
+    def _proxies(self) -> dict:
+        return self._session_manager.session.proxies
+
+    def get_all(self) -> dict[str, str]:
+        return dict(self._proxies)
+
+    def get(self, scheme: str, default: str | None = None) -> str | None:
+        return self._proxies.get(scheme, default)
+
+    def set(self, scheme: str, url: str) -> None:
+        self._proxies[scheme] = url
+
+    def update(self, mapping: Mapping[str, str]) -> None:
+        self._proxies.update(dict(mapping))
+
+    def remove(self, scheme: str) -> None:
+        self._proxies.pop(scheme, None)
+
+    def clear(self) -> None:
+        self._proxies.clear()
+
+    def set_strategy(self, fn: Callable[[str], ProxyLike] | None) -> None:
+        """Saves the strategy to the config; send() will read it from NetConfig.proxy_strategy."""
+        self._configs.net.proxy_strategy = fn
+
+    def get_strategy(self) -> Callable[[str], ProxyLike] | None:
+        return self._configs.net.proxy_strategy
+
+    def disable_strategy(self) -> None:
+        self.set_strategy(None)
