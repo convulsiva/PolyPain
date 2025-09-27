@@ -49,20 +49,12 @@ class SessionManager:
             new.headers.update(old.headers)
             new.proxies.update(old.proxies)
             new.cookies.update(old.cookies)
-            self.apply_retry(self._configs.net.retry)
+            new.adapters.update(old.adapters)
             self.session.close()
             self.session = new
         except Exception as err:
             self.session = old
             raise SwitchSessionError("A session change error occurred during a cache change") from err
-
-    def apply_retry(self, retry: Retry) -> None:
-        adapter = HTTPAdapter(max_retries=retry)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-    def apply_headers(self, headers: Mapping[str, str]) -> None:
-        self.session.headers.update(headers)
 
     def set_proxy_strategy(self, strategy: Callable[[str], ProxyLike]) -> None:
         self._proxy_strategy = strategy
