@@ -41,6 +41,7 @@ class SessionManager:
         self.close()
 
     def switch_cache(self, new_cache_config: CacheConfig) -> None:
+        # Close current session!
         old = self.session
         try:
             new = SessionFactory.create(self._configs.client, new_cache_config)
@@ -52,11 +53,10 @@ class SessionManager:
             self.session = new
         except Exception as err:
             self.session = old
-            raise SwitchSessionError("A session change error occurred during a cache change") from err
-
-
+            raise SwitchSessionError("A session switch error occurred during a cache switch") from err
 
     # ---------- proxies utils ----------
+    # TODO: Maybe it is worth taking them out to another place, then think about it
     @staticmethod
     def _normalize_proxy(p: ProxyLike) -> ProxyLike:
         if p is None:
