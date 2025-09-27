@@ -1,8 +1,9 @@
 from http.cookiejar import CookieJar
 from furl import furl
-from typing import Optional, Union, Mapping, FrozenSet
+from typing import Optional, Union, Mapping, FrozenSet, Callable
 from dataclasses import dataclass, field
 from os import PathLike
+from type_defs import ProxyLike
 
 
 @dataclass(slots=True)
@@ -25,8 +26,8 @@ class NetConfig:
     status_forcelist: FrozenSet[int] = frozenset({429, 500, 502, 503, 504})
 
     headers: dict[str, str] = field(default_factory=dict)
-    proxies: dict[str, str] = field(default_factory=dict)  # {"http": "...", "https": "..."}
     user_agent: Optional[str] = None  # if None use random user agent
+    proxy_strategy: Callable[[str], ProxyLike] | None = None
 
 
 @dataclass(slots=True)

@@ -23,10 +23,9 @@ class SessionFactory:
 
 class SessionManager:
     def __init__(self,
-                 configs: ConfigBox,
-                 proxy_strategy: Callable[[str], ProxyLike]) -> None:
+                 configs: ConfigBox
+                 ) -> None:
         self._configs = configs
-        self._proxy_strategy = proxy_strategy
         self.session: Optional[SessionLike] = SessionFactory.create(configs.client, configs.cache)
 
     # ---------- lifecycle ----------
@@ -41,7 +40,6 @@ class SessionManager:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
 
-    # ---------- configuration ----------
     def switch_cache(self, new_cache_config: CacheConfig) -> None:
         old = self.session
         try:
@@ -56,18 +54,9 @@ class SessionManager:
             self.session = old
             raise SwitchSessionError("A session change error occurred during a cache change") from err
 
-    def set_proxy_strategy(self, strategy: Callable[[str], ProxyLike]) -> None:
-        self._proxy_strategy = strategy
 
-    def get_proxy_strategy(self) -> Callable[[str], ProxyLike]:
-        return self._proxy_strategy
 
-    # ---------- request path ----------
-    def prepare(self, method: str, url: str, **kwargs) -> PreparedRequest:
-        # Use before send()
-        req = Request(method=method, url=url, **kwargs)
-        return self.session.prepare_request(req)
-
+    # ---------- proxies utils ----------
     @staticmethod
     def _normalize_proxy(p: ProxyLike) -> ProxyLike:
         if p is None:
@@ -84,15 +73,25 @@ class SessionManager:
             return strat
         if strat is None:
             return call
-        strat.update(call)
-        return strat
+        merged = dict(strat)
+        merged.update(call)
+        return merged
+
+    # ---------- request path ----------
+    def prepare(self, method: str, url: str, **kwargs) -> PreparedRequest:
+        """Use before send()"""
+        req = Request(method=method, url=url, **kwargs)
+        return self.session.prepare_request(req)
 
     def send(self,
              request: PreparedRequest,
-             timeout: Optional[int | float] = None,
-             proxies: Optional[str, Mapping[str, str]] = None,
+             timeout: int | float | None = None,
+             proxies: str | Mapping[str, str] | None = None,
              **kwargs) -> Response:
+        strat_proxies = None
+        if callable(self._configs.net.proxy_strategy):
+            strat_proxies = self._configs.net.proxy_strategy(request.url)
         return self.session.send(request,
                                  timeout=timeout or self._configs.net.timeout,
-                                 proxies=self._select_proxies(proxies, self._proxy_strategy(request.url)),
+                                 proxies=self._select_proxies(proxies, strat_proxies),
                                  **kwargs)
