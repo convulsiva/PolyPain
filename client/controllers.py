@@ -51,7 +51,7 @@ class CookieController(BaseController):
     def _cookies(self) -> RequestsCookieJar:
         return self._session_manager.session.cookies
 
-    def get(self) -> dict[str, str]:
+    def get_all(self) -> dict[str, str]:
         return dict_from_cookiejar(self._cookies)
 
     def save(self, file_path: PathLike[str] | None = None) -> None:
