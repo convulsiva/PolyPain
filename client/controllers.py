@@ -12,16 +12,11 @@ from http.cookiejar import MozillaCookieJar
 from requests.structures import CaseInsensitiveDict
 from fake_useragent import UserAgent
 
-# PROBLEM:
-# session_manager.session.cookies/headers/proxies when rebuilding the session, the links will go rotten. (
-
 
 class BaseController:
     def __init__(self,
                  session_manager: SessionManager,
-                 configs: ConfigBox,
-                 *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+                 configs: ConfigBox) -> None:
         self._session_manager = session_manager
         self._configs = configs
 
@@ -51,11 +46,9 @@ class CacheController(BaseController):
             self._session_manager.session.cache.clear()
 
 
-class CookieController(BaseController, RequestsCookieJar):
-    def __init__(self,
-                 session_manager: SessionManager,
-                 configs: ConfigBox) -> None:
-        super().__init__(session_manager, configs, session_manager.session.cookies)
+class CookieController(BaseController):
+    def get(self) -> dict[str, str]:
+        return dict_from_cookiejar(self._session_manager.session.cookies)
 
     def save(self, file_path: PathLike[str] | None = None) -> None:
         file_path = file_path or self._configs.cookie.file
@@ -71,24 +64,28 @@ class CookieController(BaseController, RequestsCookieJar):
     def update(self,
                cookies: CookiesLike = None,
                clear_current_cookies: bool = False) -> None:
-        if clear_current_cookies:
-            self.clear()
-        if cookies is None:
-            return None
+        jar: RequestsCookieJar = self._session_manager.session.cookies
+        if clear_current_cookies: self.clear()
+        if cookies is None: return None
         if isinstance(cookies, Mapping):
-            super().update(dict(cookies))
+            jar.update(dict(cookies))
         elif isinstance(cookies, CookieJar):
-            super().update(cookies)
+            jar.update(cookies)
         elif isinstance(cookies, (PathLike, str)):
             path = Path(cookies)
             if not path.exists():
                 raise FileNotFoundError(f"No such cookie file: {path}")
             file_jar = MozillaCookieJar(str(path))
             file_jar.load(ignore_discard=True, ignore_expires=True)
-            super().update(file_jar)
+            jar.update(file_jar)
         else:
             raise TypeError(f"Cookies must be {CookiesLike}, got {type(cookies)}")
 
+    def clear(self,
+                      domain: str | None = None,
+                      path: str | None = None,
+                      name: str | None = None) -> None:
+        self._session_manager.session.cookies.clear(domain, path, name)
 
 class HeadersController(BaseController, CaseInsensitiveDict):
     _UA: Final[UserAgent] = UserAgent()
@@ -108,5 +105,6 @@ class ProxyController(BaseController, dict):
                  session_manager: SessionManager,
                  configs: ConfigBox) -> None:
         super().__init__(session_manager, configs, session_manager.session.proxies)
+
 
 
