@@ -67,6 +67,9 @@ class SessionManager:
     def set_proxy_strategy(self, strategy: Callable[[str], ProxyLike]) -> None:
         self._proxy_strategy = strategy
 
+    def get_proxy_strategy(self) -> Callable[[str], ProxyLike]:
+        return self._proxy_strategy
+
     # ---------- request path ----------
     def prepare(self, method: str, url: str, **kwargs) -> PreparedRequest:
         # Use before send()
