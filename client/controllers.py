@@ -1,3 +1,4 @@
+from abc import ABC
 from os import PathLike
 from pathlib import Path
 from typing import Callable, Final, Iterable, Mapping
@@ -16,7 +17,7 @@ from managers import SessionManager
 from type_defs import CookiesLike, ProxyLike, SessionLike
 
 
-class BaseController:
+class BaseController(ABC):
     def __init__(self,
                  session_manager: SessionManager,
                  configs: ConfigBox) -> None:
