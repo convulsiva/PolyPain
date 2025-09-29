@@ -1,9 +1,10 @@
-from requests import Session as NotCachedSession
-from requests.cookies import RequestsCookieJar
 from http.cookiejar import CookieJar
 from os import PathLike
-from requests_cache import CachedSession
 from typing import Mapping
+
+from requests import Session as NotCachedSession
+from requests.cookies import RequestsCookieJar
+from requests_cache import CachedSession
 
 SessionLike = NotCachedSession | CachedSession
 ProxyLike = str | Mapping[str, str] | None

@@ -1,11 +1,11 @@
-from typing import Union, Optional, Mapping, Callable
+from typing import Callable, Mapping, Optional, Union
+
+from requests import PreparedRequest, Request, Response, Session as NotCachedSession
 from requests_cache import CachedSession
-from requests import Session as NotCachedSession, Request, PreparedRequest, Response
-from requests.adapters import HTTPAdapter
-from configs import ConfigBox, ClientConfig, CacheConfig
-from urllib3.util.retry import Retry
-from type_defs import ProxyLike, SessionLike
+
+from configs import CacheConfig, ClientConfig, ConfigBox
 from exceptions import SwitchSessionError
+from type_defs import ProxyLike, SessionLike
 
 
 class SessionFactory:

@@ -1,9 +1,11 @@
-from http.cookiejar import CookieJar
-from furl import furl
-from typing import Optional, Union, Mapping, FrozenSet, Callable
 from dataclasses import dataclass, field
+from http.cookiejar import CookieJar
 from os import PathLike
+from typing import Callable, Mapping, Optional, Union
+
+from furl import furl
 from urllib3.util.retry import Retry
+
 from type_defs import ProxyLike
 
 
