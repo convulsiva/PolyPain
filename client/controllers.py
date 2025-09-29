@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Callable, Final, Iterable, Mapping
 from http.cookiejar import CookieJar, MozillaCookieJar
 
-from fake_useragent import UserAgent
 from requests.adapters import HTTPAdapter
 from requests.cookies import RequestsCookieJar
 from requests.structures import CaseInsensitiveDict
@@ -107,8 +106,6 @@ class CookiesController(BaseController):
 
 
 class HeadersController(BaseController):
-    _UA: Final[UserAgent] = UserAgent()
-
     @property
     def _headers(self) -> CaseInsensitiveDict:
         return self._session.headers

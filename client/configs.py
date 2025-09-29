@@ -27,7 +27,9 @@ class NetConfig:
                          allowed_methods=("GET", "HEAD"),
                          status_forcelist=(429, 500, 502, 503, 504))
     timeout: float = 5.0
-    headers: dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=lambda: {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    })
     user_agent: Optional[str] = None     # if None use random user agent
     proxy_strategy: Callable[[str], ProxyLike] | None = None
 
