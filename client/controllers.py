@@ -1,8 +1,11 @@
 from os import PathLike
+
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from managers import SessionManager
 from configs import CacheConfig, ConfigBox
 from exceptions import CacheDisabledError
-from typing import Mapping, Any, Final, Callable
+from typing import Mapping, Any, Final, Callable, Iterable
 from type_defs import CachedSession, NotCachedSession, CookiesLike, ProxyLike
 from http.cookiejar import CookieJar
 from requests.utils import dict_from_cookiejar
@@ -17,7 +20,7 @@ class BaseController:
     def __init__(self,
                  session_manager: SessionManager,
                  configs: ConfigBox) -> None:
-        self._session_manager = session_manager
+        self._session_manager = session_manager.session
         self._configs = configs
 
 
@@ -153,3 +156,37 @@ class ProxyController(BaseController):
 
     def disable_strategy(self) -> None:
         self.set_strategy(None)
+
+
+class AdapterController(BaseController):
+    @property
+    def _adapters(self) -> dict[str, HTTPAdapter]:
+        return self._session_manager.session.adapters
+
+    def get_all(self) -> dict[str, HTTPAdapter]:
+        return dict(self._adapters)
+
+    def get(self, prefix: str, default: str | None = None) -> HTTPAdapter | None:
+        return self._adapters.get(prefix, default)
+
+    def mount(
+        self,
+        prefix: str,
+        *,
+        retry: Retry | None = None,
+        pool_connections: int = 10,
+        pool_maxsize: int = 10,
+    ) -> None:
+        adapter = HTTPAdapter(
+            max_retries=retry or Retry(0),
+            pool_connections=pool_connections,
+            pool_maxsize=pool_maxsize,
+        )
+        self._session_manager.session.mount(prefix, adapter)
+
+    def reset(
+        self,
+        prefixes: Iterable[str] = ("http://", "https://"),
+    ) -> None:
+        for p in prefixes:
+            self.mount(p, retry=Retry(0))

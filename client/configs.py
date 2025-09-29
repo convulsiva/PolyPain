@@ -3,6 +3,7 @@ from furl import furl
 from typing import Optional, Union, Mapping, FrozenSet, Callable
 from dataclasses import dataclass, field
 from os import PathLike
+from urllib3.util.retry import Retry
 from type_defs import ProxyLike
 
 
@@ -17,16 +18,15 @@ class ClientConfig:
 
 @dataclass(slots=True)
 class NetConfig:
+    retry: Retry = Retry(total=3,
+                         connect=None,   # if None connect = total
+                         read=None,      # if None read = total
+                         backoff_factor=0.5,
+                         allowed_methods=("GET", "HEAD"),
+                         status_forcelist=(429, 500, 502, 503, 504))
     timeout: float = 5.0
-    retries_total: int = 3
-    retries_connect: Optional[int] = None   # if None retries_connect = retries_total
-    retries_read: Optional[int] = None      # if None retries_read = retries_total
-    backoff_factor: float = 0.5
-    allowed_methods: tuple[str, ...] = ("GET", "HEAD")
-    status_forcelist: FrozenSet[int] = frozenset({429, 500, 502, 503, 504})
-
     headers: dict[str, str] = field(default_factory=dict)
-    user_agent: Optional[str] = None  # if None use random user agent
+    user_agent: Optional[str] = None     # if None use random user agent
     proxy_strategy: Callable[[str], ProxyLike] | None = None
 
 
