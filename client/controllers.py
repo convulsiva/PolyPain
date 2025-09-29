@@ -1,6 +1,6 @@
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, Final, Iterable, Mapping
+from typing import Callable, Final, Iterable, Mapping
 from http.cookiejar import CookieJar, MozillaCookieJar
 
 from fake_useragent import UserAgent
@@ -13,15 +13,19 @@ from urllib3.util.retry import Retry
 from configs import CacheConfig, ConfigBox
 from exceptions import CacheDisabledError
 from managers import SessionManager
-from type_defs import CachedSession, NotCachedSession, CookiesLike, ProxyLike
+from type_defs import CookiesLike, ProxyLike, SessionLike
 
 
 class BaseController:
     def __init__(self,
                  session_manager: SessionManager,
                  configs: ConfigBox) -> None:
-        self._session_manager = session_manager.session
+        self._session_manager = session_manager
         self._configs = configs
+
+    @property
+    def _session(self) -> SessionLike:
+        return self._session_manager.session
 
 
 class CacheController(BaseController):
@@ -41,18 +45,18 @@ class CacheController(BaseController):
         self._session_manager.switch_cache(self._configs.cache)
 
     def prune(self) -> None:
-        if isinstance(self._session_manager.session, CachedSession):
-            self._session_manager.session.cache.remove_expired_responses()
+        if hasattr(self._session, "cache"):
+            self._session.cache.delete(expired=True)
 
     def clear(self) -> None:
-        if isinstance(self._session_manager.session, CachedSession):
-            self._session_manager.session.cache.clear()
+        if hasattr(self._session, "cache"):
+            self._session.cache.clear()
 
 
 class CookieController(BaseController):
     @property
     def _cookies(self) -> RequestsCookieJar:
-        return self._session_manager.session.cookies
+        return self._session.cookies
 
     def get_all(self) -> dict[str, str]:
         return dict_from_cookiejar(self._cookies)
@@ -72,19 +76,25 @@ class CookieController(BaseController):
                cookies: CookiesLike = None,
                clear_current_cookies: bool = False) -> None:
         jar: RequestsCookieJar = self._cookies
-        if clear_current_cookies: self.clear()
-        if cookies is None: return None
+        if clear_current_cookies:
+            self.clear()
+        if cookies is None:
+            return None
         if isinstance(cookies, Mapping):
             jar.update(dict(cookies))
-        elif isinstance(cookies, CookieJar):
+        elif isinstance(cookies, RequestsCookieJar):
             jar.update(cookies)
+        elif isinstance(cookies, CookieJar):
+            for c in cookies:
+                jar.set_cookie(c)
         elif isinstance(cookies, (PathLike, str)):
             path = Path(cookies)
             if not path.exists():
                 raise FileNotFoundError(f"No such cookie file: {path}")
             file_jar = MozillaCookieJar(str(path))
             file_jar.load(ignore_discard=True, ignore_expires=True)
-            jar.update(file_jar)
+            for c in file_jar:
+                jar.set_cookie(c)
         else:
             raise TypeError(f"Cookies must be {CookiesLike}, got {type(cookies)}")
 
@@ -100,7 +110,7 @@ class HeadersController(BaseController):
 
     @property
     def _headers(self) -> CaseInsensitiveDict:
-        return self._session_manager.session.headers
+        return self._session.headers
 
     def get_all(self) -> dict[str, str]:
         return dict(self._headers)
@@ -127,7 +137,7 @@ class HeadersController(BaseController):
 class ProxyController(BaseController):
     @property
     def _proxies(self) -> dict:
-        return self._session_manager.session.proxies
+        return self._session.proxies
 
     def get_all(self) -> dict[str, str]:
         return dict(self._proxies)
@@ -161,7 +171,7 @@ class ProxyController(BaseController):
 class AdapterController(BaseController):
     @property
     def _adapters(self) -> dict[str, HTTPAdapter]:
-        return self._session_manager.session.adapters
+        return self._session.adapters
 
     def get_all(self) -> dict[str, HTTPAdapter]:
         return dict(self._adapters)
@@ -182,11 +192,20 @@ class AdapterController(BaseController):
             pool_connections=pool_connections,
             pool_maxsize=pool_maxsize,
         )
-        self._session_manager.session.mount(prefix, adapter)
+        self._session.mount(prefix, adapter)
 
     def reset(
-        self,
-        prefixes: Iterable[str] = ("http://", "https://"),
+            self,
+            prefixes: Iterable[str] = ("http://", "https://"),
+            *,
+            retry: Retry | None = None,
+            pool_connections: int = 10,
+            pool_maxsize: int = 10,
     ) -> None:
         for p in prefixes:
-            self.mount(p, retry=Retry(0))
+            self.mount(
+                p,
+                retry=retry or Retry(0),
+                pool_connections=pool_connections,
+                pool_maxsize=pool_maxsize,
+            )

@@ -1,4 +1,4 @@
-from typing import Callable, Mapping, Optional, Union
+from typing import Mapping, Optional
 
 from requests import PreparedRequest, Request, Response, Session as NotCachedSession
 from requests_cache import CachedSession
