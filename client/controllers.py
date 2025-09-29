@@ -53,7 +53,7 @@ class CacheController(BaseController):
             self._session.cache.clear()
 
 
-class CookieController(BaseController):
+class CookiesController(BaseController):
     @property
     def _cookies(self) -> RequestsCookieJar:
         return self._session.cookies
@@ -134,7 +134,7 @@ class HeadersController(BaseController):
         self._headers.clear()
 
 
-class ProxyController(BaseController):
+class ProxiesController(BaseController):
     @property
     def _proxies(self) -> dict:
         return self._session.proxies
@@ -168,7 +168,7 @@ class ProxyController(BaseController):
         self.set_strategy(None)
 
 
-class AdapterController(BaseController):
+class AdaptersController(BaseController):
     @property
     def _adapters(self) -> dict[str, HTTPAdapter]:
         return self._session.adapters
