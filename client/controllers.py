@@ -174,7 +174,7 @@ class AdaptersController(BaseController):
     def get_all(self) -> dict[str, HTTPAdapter]:
         return dict(self._adapters)
 
-    def get(self, prefix: str, default: str | None = None) -> HTTPAdapter | None:
+    def get(self, prefix: str, default: HTTPAdapter | None = None) -> HTTPAdapter | None:
         return self._adapters.get(prefix, default)
 
     def mount(
