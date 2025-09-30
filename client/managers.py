@@ -17,7 +17,7 @@ class SessionFactory:
             return CachedSession(
                 cache_name=cache_config.name or client_config.name,
                 backend=cache_config.backend,
-                expire_after=cache_config.ttl,
+                expire_after= None if cache_config.ttl < 0 else cache_config.ttl,
                 cache_control=cache_config.cache_control
             )
         return NotCachedSession()
