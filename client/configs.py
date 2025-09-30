@@ -20,12 +20,14 @@ class ClientConfig:
 
 @dataclass(slots=True)
 class NetConfig:
-    retry: Retry = Retry(total=3,
-                         connect=None,   # if None connect = total
-                         read=None,      # if None read = total
-                         backoff_factor=0.5,
-                         allowed_methods=("GET", "HEAD"),
-                         status_forcelist=(429, 500, 502, 503, 504))
+    retry: Retry = field(default_factory=lambda: Retry(
+        total=3,
+        connect=None,   # if None connect = total
+        read=None,      # if None read = total
+        backoff_factor=0.5,
+        allowed_methods=("GET", "HEAD"),
+        status_forcelist=(429, 500, 502, 503, 504)
+    ))
     timeout: float = 5.0
     headers: dict[str, str] = field(default_factory=lambda: {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
