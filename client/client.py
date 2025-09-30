@@ -57,7 +57,7 @@ class Client(ABC):
         timeout: int | float | None = None,
         proxies: ProxyLike = None,
         prepare_kwargs: Optional[dict] = None,
-        send_kwargs,
+        **send_kwargs,
     ) -> Response:
         """
         A single entry point: prepares a PreparedRequest and sends it through the SessionManager.
@@ -70,7 +70,7 @@ class Client(ABC):
         full_url = (self._configs.client.base_url / url).url
         req: PreparedRequest = self._session_manager.prepare(method=method,
                                                              url=full_url,
-                                                             **prepare_kwargs)
+                                                             **(prepare_kwargs or {}))
         resp: Response = self._session_manager.send(request=req,
                                                     timeout=timeout,
                                                     proxies=proxies,
