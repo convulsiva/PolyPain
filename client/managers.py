@@ -1,7 +1,9 @@
 from typing import Mapping, Optional
 
 from requests import PreparedRequest, Request, Response, Session as NotCachedSession
+from requests.adapters import HTTPAdapter
 from requests_cache import CachedSession
+from urllib3.util.retry import Retry
 
 from configs import CacheConfig, ClientConfig, ConfigBox
 from exceptions import SwitchSessionError
@@ -48,8 +50,13 @@ class SessionManager:
             new.headers.update(old.headers)
             new.proxies.update(old.proxies)
             new.cookies.update(old.cookies)
-            new.adapters.update(old.adapters)
-            self.session.close()
+            for prefix, adapter in old.adapters.items():
+                new.mount(prefix, HTTPAdapter(
+                    max_retries=adapter.max_retries,
+                    pool_connections=adapter._pool_connections,
+                    pool_maxsize=adapter._pool_maxsize,
+                ))
+            old.close()
             self.session = new
         except Exception as err:
             self.session = old
