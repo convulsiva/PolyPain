@@ -99,9 +99,9 @@ class CookiesController(BaseController):
             raise TypeError(f"Cookies must be {CookiesLike}, got {type(cookies)}")
 
     def clear(self,
-                      domain: str | None = None,
-                      path: str | None = None,
-                      name: str | None = None) -> None:
+              domain: str | None = None,
+              path: str | None = None,
+              name: str | None = None) -> None:
         self._cookies.clear(domain, path, name)
 
 
