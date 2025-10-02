@@ -1,15 +1,16 @@
 import logging
-
-from config import Config
-import handlers
-from logging_conf import setup_logging
 import telebot
+from bot.config import Config
+from bot.logging_conf import setup_logging
+from bot import handlers
+from bot.admin_panel import register_admin_handlers
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
 bot = telebot.TeleBot(Config.BOT_TOKEN)
 
+register_admin_handlers(bot)
 handlers.register_handlers(bot)
 
 if __name__ == "__main__":
