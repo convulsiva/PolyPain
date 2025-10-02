@@ -1,6 +1,7 @@
 from telebot import TeleBot, types
 from ..config import Config
 from ..keyboards import build_admin_kb
+from services.stats_service import get_admin_stats
 from .guards import admin_only, is_admin
 
 def register_admin_handlers(bot: TeleBot):
@@ -23,19 +24,49 @@ def register_admin_handlers(bot: TeleBot):
 
         if action == "stats":
             bot.answer_callback_query(call.id)
-            # без "последнего парса", как просили
-            text = (
-                "📊 <b>Статистика</b>\n"
-                "• Активных чатов: 12\n"
-                "• Подписок: 245\n"
-            )
+
+            stats = get_admin_stats()
+
+            lines = [
+                "📊 <b>Статистика</b>",
+                f"• Пользователей (всего): <b>{stats['total_users']}</b>",
+                f"• Уникальных чатов: <b>{stats['unique_chats']}</b>",
+                f"• Администраторов: <b>{stats['admins_count']}</b>",
+            ]
+
+            # добавляем блоки про группы только если ненулевые
+            if stats.get("with_group", 0) > 0:
+                lines.append(f"• Указали группу: <b>{stats['with_group']}</b>")
+            if stats.get("without_group", 0) > 0:
+                lines.append(f"• Без группы: <b>{stats['without_group']}</b>")
+
+            # ТОП-5 групп (если есть)
+            group_top = stats.get("group_top") or []
+            if group_top:
+                top_lines = "\n".join(f"   — <code>{g}</code>: {n}" for g, n in group_top)
+                lines.append("• ТОП групп:\n" + top_lines)
+
+            # временные метки (если есть)
+            if stats.get("last_registered_at"):
+                lines.append(
+                    f"• Последняя регистрация: <i>{stats['last_registered_at'].strftime('%Y-%m-%d %H:%M:%S')}</i>"
+                )
+            if stats.get("last_updated_at"):
+                lines.append(
+                    f"• Последнее обновление профиля: <i>{stats['last_updated_at'].strftime('%Y-%m-%d %H:%M:%S')}</i>"
+                )
+
+            text = "\n".join(lines)
+
             bot.edit_message_text(
                 text,
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 reply_markup=build_admin_kb(),
                 parse_mode="HTML",
+                disable_web_page_preview=True
             )
+
 
         elif action == "dm":
             bot.answer_callback_query(call.id)
