@@ -34,19 +34,16 @@ def register_admin_handlers(bot: TeleBot):
                 f"• Администраторов: <b>{stats['admins_count']}</b>",
             ]
 
-            # добавляем блоки про группы только если ненулевые
             if stats.get("with_group", 0) > 0:
                 lines.append(f"• Указали группу: <b>{stats['with_group']}</b>")
             if stats.get("without_group", 0) > 0:
                 lines.append(f"• Без группы: <b>{stats['without_group']}</b>")
 
-            # ТОП-5 групп (если есть)
             group_top = stats.get("group_top") or []
             if group_top:
                 top_lines = "\n".join(f"   — <code>{g}</code>: {n}" for g, n in group_top)
                 lines.append("• ТОП групп:\n" + top_lines)
 
-            # временные метки (если есть)
             if stats.get("last_registered_at"):
                 lines.append(
                     f"• Последняя регистрация: <i>{stats['last_registered_at'].strftime('%Y-%m-%d %H:%M:%S')}</i>"

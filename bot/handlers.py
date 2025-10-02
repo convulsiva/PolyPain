@@ -1,24 +1,12 @@
-from datetime import datetime, timedelta
-import re
-
-from keyboards import main_menu
-from services.user_storage import add_user, load_users, update_user_group
-from telebot import TeleBot
+from telebot import TeleBot, types
 from telebot.types import Message
-
-from bot.texts import (
-    DAYS_RU,
-    GROUP_SAVED,
-    HELP_MESSAGE,
-    INVALID_GROUP_FORMAT,
-    NO_GROUP,
-    NOT_REGISTERED,
-    PING,
-    SETGROUP_INSTRUCTION,
-    START_MESSAGE,
-    UNKNOWN_COMMAND,
-)
-
+from datetime import datetime, timedelta
+from texts import FAN_ON_MSG, FAN_OFF_MSG, FAN_STATUS_FMT
+from keyboards import main_menu, build_fan_toggle_kb
+from services.user_storage import add_user, update_user_group, load_users, set_fan_mode, get_fan_mode
+from services.user_storage import add_user, update_user_group, load_users
+from bot.texts import START_MESSAGE, HELP_MESSAGE, INVALID_GROUP_FORMAT, GROUP_SAVED, NOT_REGISTERED, NO_GROUP, PING, DAYS_RU, UNKNOWN_COMMAND, SETGROUP_INSTRUCTION
+import re
 
 def register_handlers(bot: TeleBot):
     @bot.message_handler(commands=["start"])
@@ -26,9 +14,13 @@ def register_handlers(bot: TeleBot):
         add_user(
             chat_id=message.chat.id,
             username=message.from_user.username,
-            first_name=message.from_user.first_name,
+            first_name=message.from_user.first_name
         )
         bot.send_message(message.chat.id, START_MESSAGE, reply_markup=main_menu())
+
+    @bot.message_handler(commands=["menu"])
+    def menu_handler(message: Message):
+        bot.send_message(message.chat.id, "Меню обновлено:", reply_markup=main_menu())
 
     # TODAY
     def get_today_text():
@@ -117,6 +109,54 @@ def register_handlers(bot: TeleBot):
         update_user_group(message.chat.id, group)
         bot.reply_to(message, GROUP_SAVED.format(group=group))
 
+    # ===== FAN MODE =====
+    @bot.message_handler(commands=["fan_on"])
+    def fan_on_cmd(message: Message):
+        set_fan_mode(message.chat.id, True)
+        bot.reply_to(message, FAN_ON_MSG)
+
+    @bot.message_handler(commands=["fan_off"])
+    def fan_off_cmd(message: Message):
+        set_fan_mode(message.chat.id, False)
+        bot.reply_to(message, FAN_OFF_MSG)
+
+    @bot.message_handler(commands=["fan"])
+    def fan_status_cmd(message: Message):
+        enabled = get_fan_mode(message.chat.id)
+        status = "ВКЛ" if enabled else "ВЫКЛ"
+        bot.send_message(
+            message.chat.id,
+            FAN_STATUS_FMT.format(status=status),
+            parse_mode="HTML",
+            reply_markup=build_fan_toggle_kb(enabled)
+        )
+
+    @bot.message_handler(func=lambda m: m.text == "🎉 Фан-режим")
+    def fan_button(message: Message):
+        enabled = get_fan_mode(message.chat.id)
+        status = "ВКЛ" if enabled else "ВЫКЛ"
+        bot.send_message(
+            message.chat.id,
+            FAN_STATUS_FMT.format(status=status),
+            parse_mode="HTML",
+            reply_markup=build_fan_toggle_kb(enabled)
+        )
+
+    @bot.callback_query_handler(func=lambda c: c.data in ("fan:on", "fan:off"))
+    def fan_toggle(call: types.CallbackQuery):
+        enabled = (call.data == "fan:on")
+        set_fan_mode(call.from_user.id, enabled)
+        new_status = "ВКЛ" if enabled else "ВЫКЛ"
+        bot.answer_callback_query(call.id, text=("Включено" if enabled else "Выключено"))
+        bot.edit_message_text(
+            f"🎛 Статус фан-режима: <b>{new_status}</b>",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            parse_mode="HTML",
+            reply_markup=build_fan_toggle_kb(enabled)
+        )
+
+
     @bot.message_handler(func=lambda msg: True)
     def easter_egg_handler(message: Message):
         text = message.text.lower()
@@ -126,9 +166,10 @@ def register_handlers(bot: TeleBot):
         if any(trigger in text for trigger in triggers):
             bot.send_sticker(
                 message.chat.id,
-                "CAACAgIAAxkBAAOcaMR5j0knrqDF0s1lONeOhEY2syYAAvsYAAIRSwhLT7Bhl6t0YIo2BA",
+                "CAACAgIAAxkBAAOcaMR5j0knrqDF0s1lONeOhEY2syYAAvsYAAIRSwhLT7Bhl6t0YIo2BA"
             )
 
     @bot.message_handler(func=lambda msg: True)
     def fallback_handler(message: Message):
         bot.reply_to(message, UNKNOWN_COMMAND)
+
