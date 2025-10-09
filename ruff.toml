@@ -1,5 +1,5 @@
 target-version = "py313"
-line-length = 80
+line-length = 100
 src = ["."]
 
 exclude = [
