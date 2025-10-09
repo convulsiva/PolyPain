@@ -1,7 +1,8 @@
 import logging
-import sys
 import os
 from pathlib import Path
+import sys
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -36,7 +37,4 @@ def setup_logging():
     file_handler = logging.FileHandler(LOG_FILE_NAME, encoding="utf-8")
     file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT))
 
-    logging.basicConfig(
-        level=logging.INFO,
-        handlers=[console_handler, file_handler]
-    )
+    logging.basicConfig(level=logging.INFO, handlers=[console_handler, file_handler])

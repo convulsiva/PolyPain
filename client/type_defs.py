@@ -1,6 +1,6 @@
+from collections.abc import Mapping
 from http.cookiejar import CookieJar
 from os import PathLike
-from typing import Mapping
 
 from requests import Session as NotCachedSession
 from requests.cookies import RequestsCookieJar

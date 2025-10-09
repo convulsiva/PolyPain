@@ -1,10 +1,24 @@
+from datetime import datetime, timedelta
+import re
+
+from keyboards import main_menu
+from services.user_storage import add_user, load_users, update_user_group
 from telebot import TeleBot
 from telebot.types import Message
-from datetime import datetime, timedelta
-from keyboards import main_menu
-from services.user_storage import add_user, update_user_group, load_users
-from bot.texts import START_MESSAGE, HELP_MESSAGE, INVALID_GROUP_FORMAT, GROUP_SAVED, NOT_REGISTERED, NO_GROUP, PING, DAYS_RU, UNKNOWN_COMMAND, SETGROUP_INSTRUCTION
-import re
+
+from bot.texts import (
+    DAYS_RU,
+    GROUP_SAVED,
+    HELP_MESSAGE,
+    INVALID_GROUP_FORMAT,
+    NO_GROUP,
+    NOT_REGISTERED,
+    PING,
+    SETGROUP_INSTRUCTION,
+    START_MESSAGE,
+    UNKNOWN_COMMAND,
+)
+
 
 def register_handlers(bot: TeleBot):
     @bot.message_handler(commands=["start"])
@@ -12,7 +26,7 @@ def register_handlers(bot: TeleBot):
         add_user(
             chat_id=message.chat.id,
             username=message.from_user.username,
-            first_name=message.from_user.first_name
+            first_name=message.from_user.first_name,
         )
         bot.send_message(message.chat.id, START_MESSAGE, reply_markup=main_menu())
 
@@ -112,7 +126,7 @@ def register_handlers(bot: TeleBot):
         if any(trigger in text for trigger in triggers):
             bot.send_sticker(
                 message.chat.id,
-                "CAACAgIAAxkBAAOcaMR5j0knrqDF0s1lONeOhEY2syYAAvsYAAIRSwhLT7Bhl6t0YIo2BA"
+                "CAACAgIAAxkBAAOcaMR5j0knrqDF0s1lONeOhEY2syYAAvsYAAIRSwhLT7Bhl6t0YIo2BA",
             )
 
     @bot.message_handler(func=lambda msg: True)

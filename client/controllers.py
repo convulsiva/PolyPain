@@ -1,25 +1,21 @@
-from abc import ABC
+from collections.abc import Callable, Iterable, Mapping
+from http.cookiejar import CookieJar, MozillaCookieJar
 from os import PathLike
 from pathlib import Path
-from typing import Callable, Final, Iterable, Mapping
-from http.cookiejar import CookieJar, MozillaCookieJar
-
-from requests.adapters import HTTPAdapter
-from requests.cookies import RequestsCookieJar
-from requests.structures import CaseInsensitiveDict
-from requests.utils import dict_from_cookiejar
-from urllib3.util.retry import Retry
 
 from configs import CacheConfig, ConfigBox
 from exceptions import CacheDisabledError
 from managers import SessionManager
+from requests.adapters import HTTPAdapter
+from requests.cookies import RequestsCookieJar
+from requests.structures import CaseInsensitiveDict
+from requests.utils import dict_from_cookiejar
 from type_defs import CookiesLike, ProxyLike, SessionLike
+from urllib3.util.retry import Retry
 
 
-class BaseController(ABC):
-    def __init__(self,
-                 session_manager: SessionManager,
-                 configs: ConfigBox) -> None:
+class BaseController:
+    def __init__(self, session_manager: SessionManager, configs: ConfigBox) -> None:
         self._session_manager = session_manager
         self._configs = configs
 
@@ -72,14 +68,12 @@ class CookiesController(BaseController):
             jar.set_cookie(c)
         jar.save(ignore_discard=True, ignore_expires=True)
 
-    def update(self,
-               cookies: CookiesLike = None,
-               clear_current_cookies: bool = False) -> None:
+    def update(self, cookies: CookiesLike = None, clear_current_cookies: bool = False) -> None:
         jar: RequestsCookieJar = self._cookies
         if clear_current_cookies:
             self.clear()
         if cookies is None:
-            return None
+            return
         if isinstance(cookies, Mapping):
             jar.update(dict(cookies))
         elif isinstance(cookies, RequestsCookieJar):
@@ -98,10 +92,12 @@ class CookiesController(BaseController):
         else:
             raise TypeError(f"Cookies must be {CookiesLike}, got {type(cookies)}")
 
-    def clear(self,
-              domain: str | None = None,
-              path: str | None = None,
-              name: str | None = None) -> None:
+    def clear(
+        self,
+        domain: str | None = None,
+        path: str | None = None,
+        name: str | None = None,
+    ) -> None:
         self._cookies.clear(domain, path, name)
 
 
@@ -193,12 +189,12 @@ class AdaptersController(BaseController):
         self._session.mount(prefix, adapter)
 
     def reset(
-            self,
-            prefixes: Iterable[str] = ("http://", "https://"),
-            *,
-            retry: Retry | None = None,
-            pool_connections: int = 10,
-            pool_maxsize: int = 10,
+        self,
+        prefixes: Iterable[str] = ("http://", "https://"),
+        *,
+        retry: Retry | None = None,
+        pool_connections: int = 10,
+        pool_maxsize: int = 10,
     ) -> None:
         for p in prefixes:
             self.mount(
