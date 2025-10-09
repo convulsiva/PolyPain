@@ -1,0 +1,48 @@
+target-version = "py313"
+line-length = 80
+src = ["."]
+
+exclude = [
+  ".git",
+  ".venv",
+  "venv",
+  "__pycache__",
+  ".ruff_cache",
+  "build",
+  "dist",
+]
+
+[lint]
+select = [
+  "E",
+  "F",
+  "I",
+  "N",
+  "UP",
+  "B",
+  "A",
+  "C4",
+  "SIM",
+  "RET",
+  "EM",
+  "S",
+]
+
+[lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+known-first-party = ["client", "scrapers"]  # Python packages in project
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["F401", "F403"]
+"tests/**.py" = ["S101"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
