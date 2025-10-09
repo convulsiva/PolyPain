@@ -1,12 +1,15 @@
-from typing import Mapping, Optional
-
-from requests import PreparedRequest, Request, Response, Session as NotCachedSession
-from requests.adapters import HTTPAdapter
-from requests_cache import CachedSession
-from urllib3.util.retry import Retry
+from collections.abc import Mapping
 
 from configs import CacheConfig, ClientConfig, ConfigBox
 from exceptions import SwitchSessionError
+from requests import (
+    PreparedRequest,
+    Request,
+    Response,
+    Session as NotCachedSession,
+)
+from requests.adapters import HTTPAdapter
+from requests_cache import CachedSession
 from type_defs import ProxyLike, SessionLike
 
 
@@ -17,18 +20,16 @@ class SessionFactory:
             return CachedSession(
                 cache_name=cache_config.name or client_config.name,
                 backend=cache_config.backend,
-                expire_after= None if cache_config.ttl < 0 else cache_config.ttl,
-                cache_control=cache_config.cache_control
+                expire_after=None if cache_config.ttl < 0 else cache_config.ttl,
+                cache_control=cache_config.cache_control,
             )
         return NotCachedSession()
 
 
 class SessionManager:
-    def __init__(self,
-                 configs: ConfigBox
-                 ) -> None:
+    def __init__(self, configs: ConfigBox) -> None:
         self._configs = configs
-        self.session: Optional[SessionLike] = SessionFactory.create(configs.client, configs.cache)
+        self.session: SessionLike | None = SessionFactory.create(configs.client, configs.cache)
 
     # ---------- lifecycle ----------
     def close(self) -> None:
@@ -51,16 +52,21 @@ class SessionManager:
             new.proxies.update(old.proxies)
             new.cookies.update(old.cookies)
             for prefix, adapter in old.adapters.items():
-                new.mount(prefix, HTTPAdapter(
-                    max_retries=adapter.max_retries,
-                    pool_connections=adapter._pool_connections,
-                    pool_maxsize=adapter._pool_maxsize,
-                ))
+                new.mount(
+                    prefix,
+                    HTTPAdapter(
+                        max_retries=adapter.max_retries,
+                        pool_connections=adapter._pool_connections,
+                        pool_maxsize=adapter._pool_maxsize,
+                    ),
+                )
             old.close()
             self.session = new
         except Exception as err:
             self.session = old
-            raise SwitchSessionError("A session switch error occurred during a cache switch") from err
+            raise SwitchSessionError(
+                "A session switch error occurred during a cache switch"
+            ) from err
 
     # ---------- proxies utils ----------
     # TODO: Maybe it is worth taking them out to another place, then think about it
@@ -90,15 +96,19 @@ class SessionManager:
         req = Request(method=method, url=url, **kwargs)
         return self.session.prepare_request(req)
 
-    def send(self,
-             request: PreparedRequest,
-             timeout: int | float | None = None,
-             proxies: str | Mapping[str, str] | None = None,
-             **kwargs) -> Response:
+    def send(
+        self,
+        request: PreparedRequest,
+        timeout: int | float | None = None,
+        proxies: str | Mapping[str, str] | None = None,
+        **kwargs,
+    ) -> Response:
         strat_proxies = None
         if callable(self._configs.net.proxy_strategy):
             strat_proxies = self._configs.net.proxy_strategy(request.url)
-        return self.session.send(request,
-                                 timeout=timeout or self._configs.net.timeout,
-                                 proxies=self._select_proxies(proxies, strat_proxies),
-                                 **kwargs)
+        return self.session.send(
+            request,
+            timeout=timeout or self._configs.net.timeout,
+            proxies=self._select_proxies(proxies, strat_proxies),
+            **kwargs,
+        )

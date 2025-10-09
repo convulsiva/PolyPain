@@ -1,8 +1,9 @@
-from config import Config
-from logging_conf import setup_logging
 import logging
-import telebot
+
+from config import Config
 import handlers
+from logging_conf import setup_logging
+import telebot
 
 setup_logging()
 logger = logging.getLogger(__name__)

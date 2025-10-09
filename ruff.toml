@@ -13,6 +13,7 @@ exclude = [
 ]
 
 [lint]
+extend-ignore = ["EM101", "EM102"]
 select = [
   "E",
   "F",

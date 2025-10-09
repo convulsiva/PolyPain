@@ -1,12 +1,8 @@
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+from telebot.types import KeyboardButton, ReplyKeyboardMarkup
+
 
 def main_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row(
-        KeyboardButton("📅 Сегодня"),
-        KeyboardButton("📆 Завтра")
-    )
-    markup.row(
-        KeyboardButton("🗓 Всё расписание")
-    )
+    markup.row(KeyboardButton("📅 Сегодня"), KeyboardButton("📆 Завтра"))
+    markup.row(KeyboardButton("🗓 Всё расписание"))
     return markup
