@@ -10,8 +10,8 @@ from .user_storage import (
     load_users,
     save_users,
 )
-from config import Config
-from texts import FAN_JOKES
+from ..config import Config
+from ..texts import FAN_JOKES
 
 log = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Dict, Any, List
-from config import Config
+from ..config import Config
 
 FILE_PATH = Config.USER_FILE_PATH
 

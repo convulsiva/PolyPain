@@ -1,10 +1,11 @@
 import logging
 import telebot
-from bot.config import Config
-from bot.logging_conf import setup_logging
-from services.fan_worker import start_fan_worker
-from bot import handlers
-from bot.admin_panel import register_admin_handlers
+
+from .config import Config
+from .logging_conf import setup_logging
+from .services.fan_worker import start_fan_worker
+from . import handlers
+from .admin_panel.admin_panel import register_admin_handlers
 
 setup_logging()
 logger = logging.getLogger(__name__)

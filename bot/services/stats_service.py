@@ -1,7 +1,7 @@
 from collections import Counter
 from typing import Any, Dict, List, Tuple
-from services.user_storage import load_users
-from config import Config
+from .user_storage import load_users
+from ..config import Config
 
 def _normalize_users(raw: Any) -> Dict[str, Dict[str, Any]]:
     if isinstance(raw, dict) and "users" in raw and isinstance(raw["users"], list):
