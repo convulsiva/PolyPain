@@ -78,9 +78,8 @@ class Client:
                                                              headers / cookies / auth, etc.
         – send_kwargs: everything passed to session.send(): stream, allow_redirects, etc.
         """
-        full_url = (self._configs.client.base_url / url).url
         req: PreparedRequest = self._session_manager.prepare(
-            method=method, url=full_url, **(prepare_kwargs or {})
+            method=method, url=url, **(prepare_kwargs or {})
         )
         resp: Response = self._session_manager.send(
             request=req, timeout=timeout, proxies=proxies, **send_kwargs
