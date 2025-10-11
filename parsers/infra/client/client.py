@@ -1,15 +1,16 @@
-from configs import ConfigBox
-from controllers import (
+from fake_useragent import UserAgent
+from requests import PreparedRequest, Response
+
+from .configs import ConfigBox
+from .controllers import (
     AdaptersController,
     CacheController,
     CookiesController,
     HeadersController,
     ProxiesController,
 )
-from fake_useragent import UserAgent
-from managers import SessionManager
-from requests import PreparedRequest, Response
-from type_defs import ProxyLike, SessionLike
+from .managers import SessionManager
+from .type_defs import ProxyLike, SessionLike
 
 
 class Client:

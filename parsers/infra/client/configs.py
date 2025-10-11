@@ -4,8 +4,9 @@ from http.cookiejar import CookieJar
 from os import PathLike
 
 from furl import furl
-from type_defs import ProxyLike
 from urllib3.util.retry import Retry
+
+from .type_defs import ProxyLike
 
 
 @dataclass(slots=True)

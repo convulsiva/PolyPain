@@ -1,7 +1,5 @@
 from collections.abc import Mapping
 
-from configs import CacheConfig, ClientConfig, ConfigBox
-from exceptions import SwitchSessionError
 from requests import (
     PreparedRequest,
     Request,
@@ -10,7 +8,10 @@ from requests import (
 )
 from requests.adapters import HTTPAdapter
 from requests_cache import CachedSession
-from type_defs import ProxyLike, SessionLike
+
+from .configs import CacheConfig, ClientConfig, ConfigBox
+from .exceptions import SwitchSessionError
+from .type_defs import ProxyLike, SessionLike
 
 
 class SessionFactory:
