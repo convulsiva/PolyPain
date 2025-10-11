@@ -49,14 +49,13 @@ def register_handlers(bot: TeleBot):
         today_eng = datetime.now().strftime("%A")
         today = DAYS_RU.get(today_eng, today_eng)
         # В будущем тут будет вызов парсера: schedule = parser.get_schedule(group, "today")
-        return f"📅 Сегодня {today} для группы <b>{group}</b>\n09:00 — Математика\n10:40 — Физика"
+        return f"📅 Сегодня {today} для группы {group}\n09:00 — Математика\n10:40 — Физика"
 
     def get_tomorrow_text(group: str):
-        """Возвращает текст расписания на завтра (заглушка)."""
         tomorrow_eng = (datetime.now() + timedelta(days=1)).strftime("%A")
         tomorrow = DAYS_RU.get(tomorrow_eng, tomorrow_eng)
         # В будущем тут будет вызов парсера: schedule = parser.get_schedule(group, "tomorrow")
-        return f"📅 Завтра {tomorrow} для группы <b>{group}</b>\n09:00 — Программирование\n10:40 — Английский"
+        return f"📅 Завтра {tomorrow} для группы {group}\n09:00 — Программирование\n10:40 — Английский"
 
     @bot.message_handler(commands=["today"])
     def today_command(message: Message):
