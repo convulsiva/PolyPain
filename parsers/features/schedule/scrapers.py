@@ -19,6 +19,8 @@ class GroupIdScraper(BaseScraper[GroupIdDTO]):
         raise ValueError(f"Group {external_id} not found")
 
 
+# class DailyScheduleScraper(BaseScraper[])
+
 if __name__ == "__main__":
     configs1 = configs.ConfigBox(
         client=configs.ClientConfig(furl("https://ruz.spbstu.ru/"), "RuzSPbPU"),

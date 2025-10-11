@@ -11,7 +11,7 @@ from .type_defs import ProxyLike
 
 @dataclass(slots=True)
 class ClientConfig:
-    base_url: furl
+    base_url: furl  # Maybe remove from here
     name: str
 
     def __post_init__(self):
