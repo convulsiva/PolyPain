@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from bs4 import BeautifulSoup
 from dtos import GroupIdDTO
 from endpoints import get_search_groups_url
@@ -15,11 +17,12 @@ class GroupIdScraper(BaseScraper[GroupIdDTO]):
         if groups:
             group = groups.find_all("a")[0]
             internal_id = int(furl(group.get("href")).path.segments[-1])
-            return GroupIdDTO(external_id=external_id, internal_id=internal_id)
+            return GroupIdDTO(id_=internal_id, name=external_id)
         raise ValueError(f"Group {external_id} not found")
 
 
 # class DailyScheduleScraper(BaseScraper[])
+
 
 if __name__ == "__main__":
     configs1 = configs.ConfigBox(
@@ -29,8 +32,7 @@ if __name__ == "__main__":
         cookie=configs.CookieConfig(),
     )
     with Client(configs1) as main_client:
-        scraper = GroupIdScraper(main_client)
-        for _i in range(30):
-            group_id_dto = scraper("5130902/40003")
-            print(group_id_dto)
-            print()
+        res = main_client.request(
+            "get", r"https://ruz.spbstu.ru/api/v1/ruz/scheduler/42733?date=2025-10-17"
+        )
+        pprint(res.json())
