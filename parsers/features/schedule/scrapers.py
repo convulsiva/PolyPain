@@ -7,6 +7,19 @@ from infra.client import Client, configs
 
 class GroupIdScraper(BaseScraper[int]):
     def __call__(self, name: str) -> int:
+        """
+        Retrieve the internal group ID by its name.
+
+        Sends a GET request to the group search endpoint, parses the resulting HTML,
+        and extracts the numeric group ID from the first matching search result.
+
+        :param name: The group name to search for.
+        :return: The internal integer ID of the first matched group.
+        :raises ValueError:
+            If no group with the given name was found.
+        :raises ScrapingError:
+            If a network or parsing error occurs during the request.
+        """
         resp = self._client.request("get", get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
