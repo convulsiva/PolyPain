@@ -3,13 +3,6 @@ import datetime
 from enum import IntEnum
 
 
-# main объект - заполняется полностью при отправке запроса на получение внутреннего id группы
-@dataclass(frozen=True, slots=True)
-class GroupIdDTO:
-    name: str
-    id_: int
-
-
 @dataclass(frozen=True, slots=True)
 class WeekDTO:
     date_start: datetime.date

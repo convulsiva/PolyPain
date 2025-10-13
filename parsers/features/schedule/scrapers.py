@@ -1,24 +1,23 @@
 from pprint import pprint
 
 from bs4 import BeautifulSoup
-from dtos import GroupIdDTO
 from endpoints import get_search_groups_url
 from features.base_scraper import BaseScraper
 from furl import furl
 from infra.client import Client, configs
 
 
-class GroupIdScraper(BaseScraper[GroupIdDTO]):
-    def __call__(self, external_id: str):
-        resp = self._client.request("get", get_search_groups_url(external_id))
+class GroupIdScraper(BaseScraper[int]):
+    def __call__(self, name: str) -> int:
+        resp = self._client.request("get", get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
         groups = soup.find("ul", class_="groups-list")
         if groups:
             group = groups.find_all("a")[0]
-            internal_id = int(furl(group.get("href")).path.segments[-1])
-            return GroupIdDTO(id_=internal_id, name=external_id)
-        raise ValueError(f"Group {external_id} not found")
+            id_ = furl(group.get("href")).path.segments[-1]
+            return int(id_)
+        raise ValueError(f"Group {name} not found")
 
 
 # class DailyScheduleScraper(BaseScraper[])
