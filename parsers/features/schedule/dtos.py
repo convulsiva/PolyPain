@@ -5,68 +5,68 @@ from enum import IntEnum
 
 @dataclass(frozen=True, slots=True)
 class WeekDTO:
-    date_start: datetime.date
-    date_end: datetime.date
-    is_odd: bool
+    date_start: datetime.date  # Week start date
+    date_end: datetime.date  # Week end date
+    is_odd: bool  # True if the week is odd
 
 
 class WeekParity(IntEnum):
-    EVERY = 0
-    EVEN = 1
-    ODD = 2
+    EVERY = 0  # Every week
+    EVEN = 1  # Even weeks
+    ODD = 2  # Odd weeks
 
 
 @dataclass(frozen=True, slots=True)
 class FacultyDTO:
-    id_: int  # Какой-то внутренний id
-    name: str  # Полное название: институт компьютерных наук и кибербезопасности
-    abbr: str  # например ИКНК
+    id_: int  # Internal faculty ID
+    name: str  # Full faculty name
+    abbr: str  # Short name, e.g. IKNC
 
 
 @dataclass(frozen=True, slots=True)
 class GroupDTO:
-    id_: int  # Внутренний id, через него поиск расписания по группе
-    name: str  # Публичное имя, 5130902/40003
-    level: int  # Курс, первый курс, второй и тд... от 1 и до 5
-    faculty: FacultyDTO
+    id_: int  # Internal group ID
+    name: str  # Group name, e.g. 5130902/40003
+    level: int  # Study level (year)
+    faculty: FacultyDTO  # Related faculty info
 
 
 @dataclass(frozen=True, slots=True)
 class TeacherDTO:
-    id_: int  # Используется в запросах по расписанию преподавателя
-    oid_: int  # Какой-то внешний id из корп. базы СПбПУ
-    full_name: str  # Полное имя, например Ульянова Нина Сергеевна
-    chair: str  # название кафедры, например 50/05 Кафедра "Высшая математика"
+    id_: int  # Internal teacher ID
+    oid_: int  # External system ID
+    full_name: str  # Full name, e.g. Nina S. Ulyanova
+    chair: str  # Department or chair name
 
 
 @dataclass(frozen=True, slots=True)
 class BuildingDTO:
-    id_: int  # Внутренний id, быть может, существует расписание по корпусу?
-    name: str  # 3-й учебный корпус - полное название корпуса
-    abbr: str  # сокращённое название, например: 3 к.
-    address: str  # Возможный адрес? почти всегда пустой(
+    id_: int  # Building ID
+    name: str  # Full building name
+    abbr: str  # Short name, e.g. "Main"
+    address: str  # Address (usually empty)
 
 
 @dataclass(frozen=True, slots=True)
 class AuditoryDTO:
-    id_: int  # Внутренний id, через него можно получить расписание по аудитории
-    name: str  # Название аудитории, например 404а или 505, 201 итд
-    building: BuildingDTO  # Корпус
+    id_: int  # Classroom ID
+    name: str  # Room name or number
+    building: BuildingDTO  # Related building info
 
 
 @dataclass(frozen=True, slots=True)
 class LessonDTO:
-    name: str  # название пары
-    type_: str
-    additional_info: str  # Доп информация о паре, зачастую пустая
-    time_start: datetime.time
-    time_end: datetime.time
-    parity: WeekParity  # по каким неделям предмет, по чётным или нечётным, или каждую неделю
-    groups: list[GroupDTO]
-    teachers: list[TeacherDTO]
-    auditories: list[AuditoryDTO]
-    webinar_url: str  # может поменять на furl
-    lms_url: str  # может поменять на furl
+    name: str  # Lesson title
+    type_: str  # Lesson type (lecture, lab, etc.)
+    additional_info: str  # Optional extra info
+    time_start: datetime.time  # Start time
+    time_end: datetime.time  # End time
+    parity: WeekParity  # Week parity rule
+    groups: list[GroupDTO]  # Related groups
+    teachers: list[TeacherDTO]  # Related teachers
+    auditories: list[AuditoryDTO]  # Related rooms
+    webinar_url: str  # Webinar link (optional)
+    lms_url: str  # LMS course link (optional)
 
 
 class WeekDay(IntEnum):
@@ -81,13 +81,13 @@ class WeekDay(IntEnum):
 
 @dataclass(frozen=True, slots=True)
 class DayDTO:
-    weekday: WeekDay  # номер дня в неделе от 1 до 6
-    date: datetime.date
-    lessons: list[LessonDTO]
+    weekday: WeekDay  # Day of the week
+    date: datetime.date  # Date of this day
+    lessons: list[LessonDTO]  # List of lessons on that day
 
 
 @dataclass(frozen=True, slots=True)
 class WeekScheduleDTO:
-    week: WeekDTO
-    days: list[DayDTO]
-    group: GroupDTO
+    week: WeekDTO  # Week info
+    days: list[DayDTO]  # Days within this week
+    group: GroupDTO  # Group the schedule belongs to
