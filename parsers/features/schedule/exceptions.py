@@ -1,0 +1,2 @@
+class GroupFindError(Exception):
+    pass
