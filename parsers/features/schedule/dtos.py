@@ -10,14 +10,6 @@ class WeekDTO:
     is_odd: bool
 
 
-class LessonType(IntEnum):
-    PRACTICE = 1
-    LECTURE = 2
-    LAB = 3
-    TEST = 4
-    EXAM = 5
-
-
 class WeekParity(IntEnum):
     EVERY = 0
     EVEN = 1
@@ -64,9 +56,8 @@ class AuditoryDTO:
 
 @dataclass(frozen=True, slots=True)
 class LessonDTO:
-    subject: str  # название пары
-    subject_short: str  # название пары сокращённое, но иногда то же, что и subject
-    type_: LessonType
+    name: str  # название пары
+    type_: str
     additional_info: str  # Доп информация о паре, зачастую пустая
     time_start: datetime.time
     time_end: datetime.time
@@ -78,14 +69,23 @@ class LessonDTO:
     lms_url: str  # может поменять на furl
 
 
+class WeekDay(IntEnum):
+    MONDAY = 1
+    TUESDAY = 2
+    WEDNESDAY = 3
+    THURSDAY = 4
+    FRIDAY = 5
+    SATURDAY = 6
+    SUNDAY = 7
+
+
 @dataclass(frozen=True, slots=True)
 class DayDTO:
-    weekday: int  # номер дня в неделе от 1 до 6
+    weekday: WeekDay  # номер дня в неделе от 1 до 6
     date: datetime.date
     lessons: list[LessonDTO]
 
 
-# main объект - заполняется полностью при отправке запроса на получение расписания группы
 @dataclass(frozen=True, slots=True)
 class WeekScheduleDTO:
     week: WeekDTO

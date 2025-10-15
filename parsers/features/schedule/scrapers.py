@@ -1,10 +1,11 @@
 from bs4 import BeautifulSoup
-from endpoints import get_search_groups_url
+from dtos import WeekScheduleDTO
+from endpoints import get_search_groups_url, get_week_schedule_url
+from exceptions import GroupFindError
 from features.base_scraper import BaseScraper
 from furl import furl
 from infra.client import Client, configs
-
-from .exceptions import GroupFindError
+from mappers import map_week_schedule
 
 
 class GroupIdScraper(BaseScraper[int]):
@@ -22,7 +23,7 @@ class GroupIdScraper(BaseScraper[int]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
-        resp = self._client.request("get", get_search_groups_url(name))
+        resp = self._client.request(method="get", url=get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
         groups = soup.find("ul", class_="groups-list")
@@ -31,7 +32,6 @@ class GroupIdScraper(BaseScraper[int]):
             id_ = furl(group.get("href")).path.segments[-1]
             return int(id_)
         raise GroupFindError(f"Group {name} not found")
-
 
 
 class GroupExistenceScraper(BaseScraper[bool | tuple[str, ...]]):
@@ -52,7 +52,7 @@ class GroupExistenceScraper(BaseScraper[bool | tuple[str, ...]]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
-        resp = self._client.request("get", get_search_groups_url(name))
+        resp = self._client.request(method="get", url=get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
         groups = soup.find("ul", class_="groups-list")
@@ -63,7 +63,21 @@ class GroupExistenceScraper(BaseScraper[bool | tuple[str, ...]]):
         return tuple(a.text.strip() for a in groups.find_all("a"))
 
 
+class WeekScheduleScraper(BaseScraper[WeekScheduleDTO]):
+    def __init__(self, client: Client, group_id_scraper: GroupIdScraper | None = None) -> None:
+        super().__init__(client)
+        self._group_id_scraper = group_id_scraper or GroupIdScraper(client)
+
+    def __call__(self, name: str) -> WeekScheduleDTO:
+        group_id = self._group_id_scraper(name)
+        resp = self._client.request(method="get", url=get_week_schedule_url(group_id))
+        resp.encoding = "utf-8"
+        return map_week_schedule(resp.json())
+
+
 if __name__ == "__main__":
+    from pprint import pprint
+
     configs1 = configs.ConfigBox(
         client=configs.ClientConfig(furl("https://ruz.spbstu.ru/"), "RuzSPbPU"),
         net=configs.NetConfig(),
@@ -71,5 +85,5 @@ if __name__ == "__main__":
         cookie=configs.CookieConfig(),
     )
     with Client(configs1) as main_client:
-        sc = GroupIdScraper(main_client)
-        print(sc("5130902/40003"))
+        sc = WeekScheduleScraper(main_client)
+        pprint(sc("5130902/40003"))
