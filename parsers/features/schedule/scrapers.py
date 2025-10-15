@@ -69,6 +69,18 @@ class WeekScheduleScraper(BaseScraper[WeekScheduleDTO]):
         self._group_id_scraper = group_id_scraper or GroupIdScraper(client)
 
     def __call__(self, name: str) -> WeekScheduleDTO:
+        """
+        Retrieve a full weekly schedule for the specified group.
+
+        Uses the internal group ID obtained from the GroupIdScraper to build
+        a request URL, sends a GET request to the schedule endpoint, and maps
+        the received JSON response into a structured WeekScheduleDTO object.
+
+        :param name: The public group name (e.g. "5130902/40003").
+        :return: A WeekScheduleDTO instance containing the full week's schedule.
+        :raises ScrapingError:
+            If a network or parsing error occurs during the request.
+        """
         group_id = self._group_id_scraper(name)
         resp = self._client.request(method="get", url=get_week_schedule_url(group_id))
         resp.encoding = "utf-8"
