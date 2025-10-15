@@ -4,9 +4,11 @@ from typing import TypeVar
 
 from infra.client import Client
 
-from .exceptions import ScrapingError
-
 T = TypeVar("T")
+
+
+class ScrapingError(Exception):
+    pass
 
 
 class CallWrapABCMeta(ABCMeta):
