@@ -6,6 +6,9 @@ from .logging_conf import setup_logging
 from .services.fan_worker import start_fan_worker
 from . import handlers
 from .admin_panel.admin_panel import register_admin_handlers
+from .services import db_service # import db
+
+db_service.init_db()
 
 setup_logging()
 logger = logging.getLogger(__name__)

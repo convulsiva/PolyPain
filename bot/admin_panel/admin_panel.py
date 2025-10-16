@@ -3,7 +3,7 @@ from telebot.apihelper import ApiTelegramException
 
 from ..config import Config
 from ..keyboards import build_admin_kb
-from ..services import admin_service, stats_service
+from ..services import db_service, stats_service
 from .guards import admin_only, is_admin
 
 
@@ -29,7 +29,7 @@ def register_admin_handlers(bot: TeleBot):
         if action == "stats":
             bot.answer_callback_query(call.id)
             stats = stats_service.get_admin_stats()
-            all_admin_ids = set(Config.ADMIN_IDS) | admin_service.load_admins()
+            all_admin_ids = set(Config.ADMIN_IDS) | db_service.get_all_admins()
             lines = [
                 "📊 <b>Статистика</b>",
                 f"• Пользователей (всего): <b>{stats['total_users']}</b>",
@@ -87,7 +87,7 @@ def register_admin_handlers(bot: TeleBot):
             return
         try:
             target_user_id = int(text)
-            if admin_service.add_admin(target_user_id):
+            if db_service.add_admin(target_user_id):
                 bot.reply_to(message, f"✅ Пользователь <code>{target_user_id}</code> успешно назначен администратором.", parse_mode="HTML")
             else:
                 bot.reply_to(message, f"⚠️ Пользователь <code>{target_user_id}</code> уже является администратором.", parse_mode="HTML")
@@ -110,7 +110,7 @@ def register_admin_handlers(bot: TeleBot):
                 bot.reply_to(message, "⛔️ Супер-администратора нельзя удалить этим способом.")
                 admin_entry(message)
                 return
-            if admin_service.remove_admin(target_user_id):
+            if db_service.remove_admin(target_user_id):
                 bot.reply_to(message, f"✅ Пользователь <code>{target_user_id}</code> больше не является администратором.", parse_mode="HTML")
             else:
                 bot.reply_to(message, f"⚠️ Пользователь <code>{target_user_id}</code> не был найден в списке администраторов.", parse_mode="HTML")
@@ -176,7 +176,7 @@ def register_admin_handlers(bot: TeleBot):
         bot.answer_callback_query(call.id)
 
 def _send_admin_list_page(bot: TeleBot, call: types.CallbackQuery, page: int = 1):
-    all_admin_ids = sorted(list(set(Config.ADMIN_IDS) | admin_service.load_admins()))
+    all_admin_ids = sorted(list(set(Config.ADMIN_IDS) | db_service.get_all_admins()))
     if not all_admin_ids:
         text = "👥 <b>Администраторы</b>:\n—"
         kb = build_admin_kb()
@@ -207,10 +207,9 @@ def _send_admin_list_page(bot: TeleBot, call: types.CallbackQuery, page: int = 1
         )
     except ApiTelegramException as e:
         if "message is not modified" in e.description:
-            pass  # Игнорируем ожидаемую ошибку
+            pass
         else:
             raise
-
 def _human_name(chat) -> str:
     if getattr(chat, "username", None):
         return f"@{chat.username}"

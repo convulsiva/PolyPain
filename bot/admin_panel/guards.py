@@ -2,16 +2,16 @@ from typing import Optional, Union
 from telebot import TeleBot
 from telebot.types import Message, CallbackQuery
 from functools import wraps
+
 from ..config import Config
-from ..services import admin_service
+from ..services import db_service
 
 TObj = Union[Message, CallbackQuery]
 
 def is_admin(user_id: Optional[int]) -> bool:
     if not user_id:
         return False
-    # Админом считается тот, кто есть в .env ИЛИ в файле admins.json
-    return user_id in Config.ADMIN_IDS or user_id in admin_service.load_admins()
+    return user_id in Config.ADMIN_IDS or user_id in db_service.get_all_admins()
 
 def _uid_from(obj: TObj) -> Optional[int]:
     if isinstance(obj, CallbackQuery):

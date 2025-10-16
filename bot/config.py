@@ -8,7 +8,7 @@ class Config:
     ADMIN_IDS: list[int] = list(map(int, os.getenv("ADMIN_IDS", "").split(","))) if os.getenv("ADMIN_IDS") else []
     PARSER_BASE_URL: str = os.getenv("PARSER_BASE_URL", "")
     ENV: str = os.getenv("ENV", "dev")
-    USER_FILE_PATH: str = os.getenv("USER_FILE_PATH", "storage/users.json")
+    DATABASE_PATH: str = os.getenv("DATABASE_PATH", "storage/database.db")
     FUN_MIN_INTERVAL: int = int(os.getenv("FUN_MIN_INTERVAL", "1800"))
     FUN_MAX_INTERVAL: int = int(os.getenv("FUN_MAX_INTERVAL", "5400"))
     FAN_COOLDOWN_SECONDS: int = int(os.getenv("FAN_COOLDOWN_SECONDS", "1200"))
