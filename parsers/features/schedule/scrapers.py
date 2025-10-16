@@ -78,8 +78,17 @@ class WeekScheduleScraper(BaseScraper[WeekScheduleDTO]):
         a request URL, sends a GET request to the schedule endpoint, and maps
         the received JSON response into a structured WeekScheduleDTO object.
 
-        :param name: The public group name (e.g. "5130902/40003").
-        :return: A WeekScheduleDTO instance containing the full week's schedule.
+        :param name:
+            The public group name (e.g. "5130902/40003").
+        :param date:
+            Optional target date within the desired week.
+            - If provided as a string (in ISO format, e.g. "2025-10-16"),
+              it will be automatically converted to a `datetime.date` object.
+            - If provided as a `datetime.date`, it is passed directly.
+            - If omitted (`None`), the scraper retrieves the schedule for the current week.
+        :return:
+            A `WeekScheduleDTO` instance containing the full week's schedule
+            corresponding to the week of the provided date (or the current week if not specified).
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
