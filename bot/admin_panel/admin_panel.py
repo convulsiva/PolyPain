@@ -6,6 +6,9 @@ from ..keyboards import build_admin_kb
 from ..services import db_service, stats_service
 from .guards import admin_only, is_admin
 
+import threading
+import time
+
 
 def register_admin_handlers(bot: TeleBot):
     pending_dm_chat: dict[int, int] = {}
@@ -77,6 +80,14 @@ def register_admin_handlers(bot: TeleBot):
                 chat_id=call.message.chat.id, message_id=call.message.message_id,
                 reply_markup=build_admin_kb(), parse_mode="HTML"
             )
+        elif action == "broadcast":
+            bot.answer_callback_query(call.id)
+            msg = bot.send_message(
+                call.message.chat.id,
+                "Введите текст сообщения для рассылки всем пользователям (или /cancel):",
+                parse_mode="HTML"
+            )
+            bot.register_next_step_handler(msg, _handle_broadcast_text)
 
     def _handle_add_admin_id(message: types.Message):
         if not is_admin(message.from_user.id): return
@@ -174,6 +185,58 @@ def register_admin_handlers(bot: TeleBot):
     @admin_only(bot)
     def _nop(call: types.CallbackQuery):
         bot.answer_callback_query(call.id)
+
+    def _handle_broadcast_text(message: types.Message):
+        if not is_admin(message.from_user.id): return
+
+        text = (message.text or "").strip()
+        if text.lower() == "/cancel":
+            bot.reply_to(message, "Рассылка отменена.")
+            admin_entry(message)
+            return
+
+        if not text:
+            msg = bot.reply_to(message, "❗️ Пустое сообщение. Введите текст или /cancel:")
+            bot.register_next_step_handler(msg, _handle_broadcast_text)
+            return
+
+        user_ids = db_service.get_all_user_chat_ids()
+        bot.reply_to(message,
+                     f"✅ Начинаю рассылку для <b>{len(user_ids)}</b> пользователей. Это может занять некоторое время...",
+                     parse_mode="HTML")
+
+        threading.Thread(
+            target=_broadcast_worker,
+            args=(bot, user_ids, text, message.chat.id),
+            daemon=True
+        ).start()
+
+        admin_entry(message)
+
+
+def _broadcast_worker(bot: TeleBot, user_ids: list[int], text: str, admin_chat_id: int):
+    sent_count = 0
+    failed_count = 0
+
+    for user_id in user_ids:
+        try:
+            bot.send_message(user_id, text, parse_mode="HTML", disable_web_page_preview=True)
+            sent_count += 1
+        except Exception:
+            failed_count += 1
+
+        time.sleep(0.1)
+
+    try:
+        bot.send_message(
+            admin_chat_id,
+            f"📣 <b>Рассылка завершена!</b>\n\n"
+            f"✅ Успешно отправлено: <b>{sent_count}</b>\n"
+            f"❌ Ошибок (юзер заблокировал бота): <b>{failed_count}</b>",
+            parse_mode="HTML"
+        )
+    except Exception:
+        print(f"Failed to send broadcast report to admin {admin_chat_id}")
 
 def _send_admin_list_page(bot: TeleBot, call: types.CallbackQuery, page: int = 1):
     all_admin_ids = sorted(list(set(Config.ADMIN_IDS) | db_service.get_all_admins()))

@@ -126,3 +126,10 @@ def get_all_users_for_stats() -> List[sqlite3.Row]:
         cursor = conn.cursor()
         cursor.execute("SELECT chat_id, group_name FROM users")
         return cursor.fetchall()
+
+
+def get_all_user_chat_ids() -> List[int]:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT chat_id FROM users")
+        return [row[0] for row in cursor.fetchall()]
