@@ -1,14 +1,26 @@
-import re
 from datetime import datetime, timedelta
+import re
+
 from telebot import TeleBot, types
 from telebot.types import Message
 
 from .keyboards import build_fan_toggle_kb, main_menu
 from .services import db_service
-from .texts import (DAYS_RU, FAN_OFF_MSG, FAN_ON_MSG, FAN_STATUS_FMT,
-                    GROUP_SAVED, HELP_MESSAGE, INVALID_GROUP_FORMAT, NO_GROUP,
-                    NOT_REGISTERED, PING, SETGROUP_INSTRUCTION, START_MESSAGE,
-                    UNKNOWN_COMMAND)
+from .texts import (
+    DAYS_RU,
+    FAN_OFF_MSG,
+    FAN_ON_MSG,
+    FAN_STATUS_FMT,
+    GROUP_SAVED,
+    HELP_MESSAGE,
+    INVALID_GROUP_FORMAT,
+    NO_GROUP,
+    NOT_REGISTERED,
+    PING,
+    SETGROUP_INSTRUCTION,
+    START_MESSAGE,
+    UNKNOWN_COMMAND,
+)
 
 
 def register_handlers(bot: TeleBot):
@@ -17,7 +29,7 @@ def register_handlers(bot: TeleBot):
         db_service.add_or_update_user(
             chat_id=message.chat.id,
             username=message.from_user.username,
-            first_name=message.from_user.first_name
+            first_name=message.from_user.first_name,
         )
         bot.send_message(message.chat.id, START_MESSAGE, reply_markup=main_menu())
 
@@ -25,15 +37,14 @@ def register_handlers(bot: TeleBot):
     def menu_handler(message: Message):
         bot.send_message(message.chat.id, "Меню обновлено:", reply_markup=main_menu())
 
-
     def handle_daily_schedule(message: Message, day: str):
         user = db_service.get_user(message.chat.id)
 
-        if not user or not user['group_name']:
+        if not user or not user["group_name"]:
             bot.reply_to(message, NO_GROUP)
             return
 
-        group = user['group_name']
+        group = user["group_name"]
         text = ""
         if day == "today":
             text = get_today_text(group)
@@ -50,7 +61,10 @@ def register_handlers(bot: TeleBot):
     def get_tomorrow_text(group: str):
         tomorrow_eng = (datetime.now() + timedelta(days=1)).strftime("%A")
         tomorrow = DAYS_RU.get(tomorrow_eng, tomorrow_eng)
-        return f"📅 Завтра {tomorrow} для группы <b>{group}</b>\n\n09:00 — Программирование\n10:40 — Английский"
+        return (
+            f"📅 Завтра {tomorrow} для группы <b>{group}</b>\n"
+            f"\n09:00 — Программирование\n10:40 — Английский"
+        )
 
     @bot.message_handler(commands=["today"])
     def today_command(message: Message):
@@ -81,7 +95,7 @@ def register_handlers(bot: TeleBot):
         if not user:
             bot.reply_to(message, NOT_REGISTERED)
             return
-        if not user['group_name']:
+        if not user["group_name"]:
             bot.reply_to(message, NO_GROUP)
             return
         bot.reply_to(message, get_schedule_text(user["group_name"]), parse_mode="HTML")
@@ -121,7 +135,6 @@ def register_handlers(bot: TeleBot):
         db_service.update_user_group(message.chat.id, group)
         bot.reply_to(message, GROUP_SAVED.format(group=group), parse_mode="HTML")
 
-
     @bot.message_handler(commands=["fan_on"])
     def fan_on_cmd(message: Message):
         db_service.set_fan_mode(message.chat.id, True)
@@ -134,15 +147,17 @@ def register_handlers(bot: TeleBot):
 
     def _get_fan_status(chat_id: int) -> bool:
         user = db_service.get_user(chat_id)
-        return user['fan_mode'] == 1 if user else False
+        return user["fan_mode"] == 1 if user else False
 
     @bot.message_handler(commands=["fan"])
     def fan_status_cmd(message: Message):
         enabled = _get_fan_status(message.chat.id)
         status = "ВКЛ" if enabled else "ВЫКЛ"
         bot.send_message(
-            message.chat.id, FAN_STATUS_FMT.format(status=status),
-            parse_mode="HTML", reply_markup=build_fan_toggle_kb(enabled)
+            message.chat.id,
+            FAN_STATUS_FMT.format(status=status),
+            parse_mode="HTML",
+            reply_markup=build_fan_toggle_kb(enabled),
         )
 
     @bot.message_handler(func=lambda m: m.text == "🎉 Фан-режим")
@@ -150,20 +165,24 @@ def register_handlers(bot: TeleBot):
         enabled = _get_fan_status(message.chat.id)
         status = "ВКЛ" if enabled else "ВЫКЛ"
         bot.send_message(
-            message.chat.id, FAN_STATUS_FMT.format(status=status),
-            parse_mode="HTML", reply_markup=build_fan_toggle_kb(enabled)
+            message.chat.id,
+            FAN_STATUS_FMT.format(status=status),
+            parse_mode="HTML",
+            reply_markup=build_fan_toggle_kb(enabled),
         )
 
     @bot.callback_query_handler(func=lambda c: c.data in ("fan:on", "fan:off"))
     def fan_toggle(call: types.CallbackQuery):
-        enabled = (call.data == "fan:on")
+        enabled = call.data == "fan:on"
         db_service.set_fan_mode(call.from_user.id, enabled)
         new_status = "ВКЛ" if enabled else "ВЫКЛ"
         bot.answer_callback_query(call.id, text=("Включено" if enabled else "Выключено"))
         bot.edit_message_text(
             f"🎛 Статус фан-режима: <b>{new_status}</b>",
-            chat_id=call.message.chat.id, message_id=call.message.message_id,
-            parse_mode="HTML", reply_markup=build_fan_toggle_kb(enabled)
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            parse_mode="HTML",
+            reply_markup=build_fan_toggle_kb(enabled),
         )
 
     # --- ОБЪЕДИНЕННЫЙ ОБРАБОТЧИК ДЛЯ ОСТАЛЬНЫХ СООБЩЕНИЙ ---
@@ -174,7 +193,7 @@ def register_handlers(bot: TeleBot):
         if any(trigger in text for trigger in triggers):
             bot.send_sticker(
                 message.chat.id,
-                "CAACAgIAAxkBAAOcaMR5j0knrqDF0s1lONeOhEY2syYAAvsYAAIRSwhLT7Bhl6t0YIo2BA"
+                "CAACAgIAAxkBAAOcaMR5j0knrqDF0s1lONeOhEY2syYAAvsYAAIRSwhLT7Bhl6t0YIo2BA",
             )
         else:
             bot.reply_to(message, UNKNOWN_COMMAND)

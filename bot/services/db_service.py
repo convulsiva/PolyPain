@@ -1,7 +1,6 @@
-import sqlite3
-import json
-from typing import Optional, List, Set, Dict, Any
 from datetime import datetime
+import json
+import sqlite3
 
 from ..config import Config
 
@@ -36,14 +35,18 @@ def init_db():
 
 # --- Функции для работы с пользователями (замена user_storage.py) ---
 
+
 def add_or_update_user(chat_id: int, username: str, first_name: str):
     with get_connection() as conn:
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO users (chat_id, username, first_name) VALUES (?, ?, ?)
             ON CONFLICT(chat_id) DO UPDATE SET
                 username = excluded.username,
                 first_name = excluded.first_name
-        """, (chat_id, username, first_name))
+        """,
+            (chat_id, username, first_name),
+        )
         conn.commit()
 
 
@@ -53,7 +56,7 @@ def update_user_group(chat_id: int, group_name: str):
         conn.commit()
 
 
-def get_user(chat_id: int) -> Optional[sqlite3.Row]:
+def get_user(chat_id: int) -> sqlite3.Row | None:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE chat_id = ?", (chat_id,))
@@ -62,11 +65,11 @@ def get_user(chat_id: int) -> Optional[sqlite3.Row]:
 
 def set_fan_mode(chat_id: int, enabled: bool):
     with get_connection() as conn:
-        conn.execute("UPDATE users SET fan_mode = ? WHERE chat_id = ?", (1 if enabled else 0, chat_id))
+        conn.execute("UPDATE users SET fan_mode = ? WHERE chat_id = ?", (int(enabled), chat_id))
         conn.commit()
 
 
-def get_all_fan_enabled_chat_ids() -> List[int]:
+def get_all_fan_enabled_chat_ids() -> list[int]:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT chat_id FROM users WHERE fan_mode = 1")
@@ -92,7 +95,9 @@ def increment_fan_daily_sent(chat_id: int):
                 counters.pop(k, None)
 
         new_counters_json = json.dumps(counters)
-        conn.execute("UPDATE users SET fan_daily_sent = ? WHERE chat_id = ?", (new_counters_json, chat_id))
+        conn.execute(
+            "UPDATE users SET fan_daily_sent = ? WHERE chat_id = ?", (new_counters_json, chat_id)
+        )
         conn.commit()
 
 
@@ -114,21 +119,21 @@ def remove_admin(user_id: int) -> bool:
         return cursor.rowcount > 0
 
 
-def get_all_admins() -> Set[int]:
+def get_all_admins() -> set[int]:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT user_id FROM admins")
         return {row[0] for row in cursor.fetchall()}
 
 
-def get_all_users_for_stats() -> List[sqlite3.Row]:
+def get_all_users_for_stats() -> list[sqlite3.Row]:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT chat_id, group_name FROM users")
         return cursor.fetchall()
 
 
-def get_all_user_chat_ids() -> List[int]:
+def get_all_user_chat_ids() -> list[int]:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT chat_id FROM users")

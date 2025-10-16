@@ -1,4 +1,10 @@
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
+
 
 def main_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -21,7 +27,7 @@ def build_admin_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(row_width=2)
     kb.add(
         InlineKeyboardButton("📊 Статистика", callback_data="admin:stats"),
-        InlineKeyboardButton("📢 Рассылка", callback_data="admin:broadcast") # <-- НОВАЯ КНОПКА
+        InlineKeyboardButton("📢 Рассылка", callback_data="admin:broadcast"),  # <-- НОВАЯ КНОПКА
     )
     kb.add(
         InlineKeyboardButton("👥 Список админов", callback_data="admin:list"),
@@ -29,6 +35,6 @@ def build_admin_kb() -> InlineKeyboardMarkup:
     )
     kb.add(
         InlineKeyboardButton("➕ Добавить админа", callback_data="admin:add"),
-        InlineKeyboardButton("➖ Удалить по ID", callback_data="admin:remove_by_id")
+        InlineKeyboardButton("➖ Удалить по ID", callback_data="admin:remove_by_id"),
     )
     return kb

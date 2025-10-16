@@ -1,11 +1,13 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Config:
     BOT_TOKEN: str = os.getenv("BOT_TOKEN", "")
-    ADMIN_IDS: list[int] = list(map(int, os.getenv("ADMIN_IDS", "").split(","))) if os.getenv("ADMIN_IDS") else []
+    ADMIN_IDS: list[int] = [int(admin_id) for admin_id in os.getenv("ADMIN_IDS").split(",")]
     PARSER_BASE_URL: str = os.getenv("PARSER_BASE_URL", "")
     ENV: str = os.getenv("ENV", "dev")
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "storage/database.db")

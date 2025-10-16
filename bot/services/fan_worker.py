@@ -1,15 +1,15 @@
+from datetime import datetime
+import json
+import logging
 import random
 import threading
 import time
-import logging
-import json
-from datetime import datetime
+
 from telebot import TeleBot
 
-from . import db_service
 from ..config import Config
-
 from ..texts import get_random_fan_content
+from . import db_service
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def _can_send_to(chat_id: int) -> bool:
         return False
 
     try:
-        counters = json.loads(user['fan_daily_sent'])
+        counters = json.loads(user["fan_daily_sent"])
     except (json.JSONDecodeError, TypeError):
         counters = {}
 
@@ -40,7 +40,10 @@ def start_fan_worker(bot: TeleBot) -> threading.Thread:
         time.sleep(10)
         log.info(
             "fan-worker: started (min=%ss, max=%ss, daily_limit=%s, force=%s)",
-            FUN_MIN_INTERVAL, FUN_MAX_INTERVAL, FUN_DAILY_LIMIT, FAN_TEST_FORCE_SEND
+            FUN_MIN_INTERVAL,
+            FUN_MAX_INTERVAL,
+            FUN_DAILY_LIMIT,
+            FAN_TEST_FORCE_SEND,
         )
         while True:
             try:
@@ -63,13 +66,13 @@ def start_fan_worker(bot: TeleBot) -> threading.Thread:
                                 cid,
                                 photo=content["image_url"],
                                 caption=f"<b>{content['title']}</b>\n\n<i>{content['caption']}</i>",
-                                parse_mode="HTML"
+                                parse_mode="HTML",
                             )
                         else:
                             text_parts = [f"<b>{content['title']}</b>"]
-                            if content.get('text'):
+                            if content.get("text"):
                                 text_parts.append(f"<i>«{content['text']}»</i>")
-                            if content.get('author'):
+                            if content.get("author"):
                                 text_parts.append(f"— {content['author']}")
 
                             message_text = "\n\n".join(text_parts)

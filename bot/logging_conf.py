@@ -1,7 +1,8 @@
 import logging
-import sys
 import os
 from pathlib import Path
+import sys
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,11 +31,13 @@ COLORS = {
 }
 RESET = "\033[0m"
 
+
 class ColorFormatter(logging.Formatter):
     def format(self, record):
         log_color = COLORS.get(record.levelname, RESET)
         message = super().format(record)
         return f"{log_color}{message}{RESET}"
+
 
 def setup_logging():
     console_handler = logging.StreamHandler(sys.stdout)
