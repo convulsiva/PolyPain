@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 
 from dtos import (
     AuditoryDTO,
@@ -13,6 +13,7 @@ from dtos import (
     WeekParity,
     WeekScheduleDTO,
 )
+from exceptions import DateFormatError
 
 
 def map_week_schedule(data: dict) -> WeekScheduleDTO:
@@ -24,17 +25,18 @@ def map_week_schedule(data: dict) -> WeekScheduleDTO:
 
 
 # --- utils ---
-def _parse_date(s: str) -> datetime.date:
-    for fmt in ("%Y-%m-%d", "%Y.%m.%d"):
+def parse_date(s: str) -> dt.date:
+    formats = ("%Y-%m-%d", "%Y.%m.%d")
+    for fmt in formats:
         try:
-            return datetime.datetime.strptime(s, fmt).date()
+            return dt.datetime.strptime(s, fmt).date()
         except ValueError:
             continue
-    raise ValueError(f"Invalid date format: {s}")  # TODO: Проверить!
+    raise DateFormatError(f"Wrong date-format for {s}. Use one of {formats} format")
 
 
-def _parse_time(s: str) -> datetime.time:
-    return datetime.datetime.strptime(s, "%H:%M").time()
+def _parse_time(s: str) -> dt.time:
+    return dt.datetime.strptime(s, "%H:%M").time()
 
 
 # --- internal mappers ---
@@ -86,14 +88,14 @@ def _map_lesson(data: dict) -> LessonDTO:
 def _map_day(data: dict) -> DayDTO:
     return DayDTO(
         weekday=WeekDay(data["weekday"]),
-        date=_parse_date(data["date"]),
+        date=parse_date(data["date"]),
         lessons=[_map_lesson(lesson) for lesson in (data.get("lessons") or [])],
     )
 
 
 def _map_week(data: dict) -> WeekDTO:
     return WeekDTO(
-        date_start=_parse_date(data["date_start"]),
-        date_end=_parse_date(data["date_end"]),
+        date_start=parse_date(data["date_start"]),
+        date_end=parse_date(data["date_end"]),
         is_odd=data["is_odd"],
     )

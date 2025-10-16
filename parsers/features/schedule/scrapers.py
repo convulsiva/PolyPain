@@ -1,11 +1,13 @@
+import datetime as dt
+
 from bs4 import BeautifulSoup
-from dtos import WeekScheduleDTO
+from dtos import DayDTO, WeekScheduleDTO
 from endpoints import get_search_groups_url, get_week_schedule_url
 from exceptions import GroupFindError
 from features.base_scraper import BaseScraper
 from furl import furl
 from infra.client import Client, configs
-from mappers import map_week_schedule
+from mappers import map_week_schedule, parse_date
 
 
 class GroupIdScraper(BaseScraper[int]):
@@ -68,7 +70,7 @@ class WeekScheduleScraper(BaseScraper[WeekScheduleDTO]):
         super().__init__(client)
         self._group_id_scraper = group_id_scraper or GroupIdScraper(client)
 
-    def __call__(self, name: str) -> WeekScheduleDTO:
+    def __call__(self, name: str, date: str | dt.date | None = None) -> WeekScheduleDTO:
         """
         Retrieve a full weekly schedule for the specified group.
 
@@ -81,10 +83,27 @@ class WeekScheduleScraper(BaseScraper[WeekScheduleDTO]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
+        if isinstance(date, str):
+            date: dt.date = parse_date(date)
         group_id = self._group_id_scraper(name)
-        resp = self._client.request(method="get", url=get_week_schedule_url(group_id))
+        resp = self._client.request(method="get", url=get_week_schedule_url(group_id, date))
         resp.encoding = "utf-8"
         return map_week_schedule(resp.json())
+
+
+class DailyScheduleScraper(BaseScraper[DayDTO]):
+    def __init__(self, client, week_schedule_scraper: WeekScheduleScraper | None = None) -> None:
+        super().__init__(client)
+        self._week_schedule_scraper = week_schedule_scraper or WeekScheduleScraper(client)
+
+    def __call__(self, name: str, date: str | dt.date) -> DayDTO:
+        if isinstance(date, str):
+            date: dt.date = parse_date(date)
+        week_schedule = self._week_schedule_scraper(name, date)
+        for day in week_schedule.days:
+            if day.date == date:
+                return day
+        raise
 
 
 if __name__ == "__main__":
@@ -97,5 +116,5 @@ if __name__ == "__main__":
         cookie=configs.CookieConfig(),
     )
     with Client(configs1) as main_client:
-        sc = WeekScheduleScraper(main_client)
-        pprint(sc("5130902/40003"))
+        sc = DailyScheduleScraper(main_client)
+        pprint(sc("5130902/40003", "2025-10-16"))
