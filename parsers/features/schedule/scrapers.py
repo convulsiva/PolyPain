@@ -3,7 +3,7 @@ import datetime as dt
 from bs4 import BeautifulSoup
 from dtos import DayDTO, WeekScheduleDTO
 from endpoints import get_search_groups_url, get_week_schedule_url
-from exceptions import GroupFindError
+from exceptions import DayNotFoundError, GroupNotFoundError
 from features.base_scraper import BaseScraper
 from furl import furl
 from infra.client import Client, configs
@@ -33,7 +33,7 @@ class GroupIdScraper(BaseScraper[int]):
             group = groups.find_all("a")[0]
             id_ = furl(group.get("href")).path.segments[-1]
             return int(id_)
-        raise GroupFindError(f"Group {name} not found")
+        raise GroupNotFoundError(f"Group {name} not found")
 
 
 class GroupExistenceScraper(BaseScraper[bool | tuple[str, ...]]):
@@ -106,13 +106,32 @@ class DailyScheduleScraper(BaseScraper[DayDTO]):
         self._week_schedule_scraper = week_schedule_scraper or WeekScheduleScraper(client)
 
     def __call__(self, name: str, date: str | dt.date) -> DayDTO:
+        """
+        Retrieve the schedule for a specific day of the given group.
+
+        Fetches the full weekly schedule using `WeekScheduleScraper` and extracts
+        the day matching the specified date.
+
+        :param name:
+            The name of the group whose schedule should be retrieved.
+        :param date:
+            The target date for which to find the schedule.
+            Can be provided either as a string in ISO format (YYYY-MM-DD)
+            or as a `datetime.date` object.
+        :return:
+            A `DayDTO` instance representing the schedule for the specified day.
+        :raises DayNotFoundError:
+            If the requested date is not found within the retrieved weekly schedule.
+        :raises ScrapingError:
+            If a network or parsing error occurs during the scraping process.
+        """
         if isinstance(date, str):
             date: dt.date = parse_date(date)
         week_schedule = self._week_schedule_scraper(name, date)
         for day in week_schedule.days:
             if day.date == date:
                 return day
-        raise
+        raise DayNotFoundError(f"Could not find day on date {date}")
 
 
 if __name__ == "__main__":

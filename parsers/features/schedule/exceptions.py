@@ -1,4 +1,8 @@
-class GroupFindError(Exception):
+class GroupNotFoundError(Exception):
+    pass
+
+
+class DayNotFoundError(Exception):
     pass
 
 
