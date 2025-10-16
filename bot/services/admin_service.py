@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Set
+from typing import Set
 
 ADMIN_FILE_PATH = "storage/admins.json"
 

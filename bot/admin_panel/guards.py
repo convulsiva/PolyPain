@@ -10,6 +10,7 @@ TObj = Union[Message, CallbackQuery]
 def is_admin(user_id: Optional[int]) -> bool:
     if not user_id:
         return False
+    # Админом считается тот, кто есть в .env ИЛИ в файле admins.json
     return user_id in Config.ADMIN_IDS or user_id in admin_service.load_admins()
 
 def _uid_from(obj: TObj) -> Optional[int]:

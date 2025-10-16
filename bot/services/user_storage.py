@@ -2,6 +2,7 @@ import json
 import os
 from typing import Dict, Any, List
 from ..config import Config
+from datetime import datetime
 
 FILE_PATH = Config.USER_FILE_PATH
 
@@ -88,3 +89,12 @@ def get_fan_mode(chat_id: int) -> bool:
 def get_all_fan_enabled_chat_ids() -> List[int]:
     users = load_users()
     return [int(cid) for cid, prof in users.items() if prof.get("fan_mode")]
+
+def set_fan_last_sent(chat_id: int):
+    users = load_users()
+    key = str(chat_id)
+    prof = users.get(key)
+    if prof:
+        prof["fan_last_sent"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        users[key] = prof
+        save_users(users)
