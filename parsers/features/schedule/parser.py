@@ -1,7 +1,7 @@
 from infra.client import Client
 from infra.client.configs import ConfigBox
 
-from scrapers import (
+from .scrapers import (
     DailyScheduleScraper,
     GroupExistenceScraper,
     GroupIdScraper,

@@ -1,6 +1,6 @@
 import datetime as dt
 
-from dtos import (
+from .dtos import (
     AuditoryDTO,
     BuildingDTO,
     DayDTO,
@@ -13,7 +13,7 @@ from dtos import (
     WeekParity,
     WeekScheduleDTO,
 )
-from exceptions import DateFormatError
+from .exceptions import DateFormatError
 
 
 def map_week_schedule(data: dict) -> WeekScheduleDTO:

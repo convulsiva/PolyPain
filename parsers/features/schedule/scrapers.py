@@ -1,13 +1,14 @@
 import datetime as dt
 
 from bs4 import BeautifulSoup
-from dtos import DayDTO, WeekScheduleDTO
-from endpoints import get_search_groups_url, get_week_schedule_url
-from exceptions import DayNotFoundError, GroupNotFoundError
-from features.base_scraper import BaseScraper
 from furl import furl
 from infra.client import Client
-from mappers import map_week_schedule, parse_date
+
+from ..base_scraper import BaseScraper
+from .dtos import DayDTO, WeekScheduleDTO
+from .endpoints import get_search_groups_url, get_week_schedule_url
+from .exceptions import DayNotFoundError, GroupNotFoundError
+from .mappers import map_week_schedule, parse_date
 
 
 class GroupIdScraper(BaseScraper[int]):
