@@ -1,3 +1,5 @@
+from time import time as get_seconds_now
+
 from fake_useragent import UserAgent
 from requests import PreparedRequest, Response
 
@@ -15,6 +17,7 @@ from .type_defs import ProxyLike, SessionLike
 
 class Client:
     def __init__(self, configs: ConfigBox) -> None:
+        self._time_last_cache_prune: float = float("-inf")
         self._configs = configs
         self._session_manager = SessionManager(configs)
 
@@ -59,6 +62,16 @@ class Client:
     def adapters(self) -> AdaptersController:
         return self._adapters
 
+    def _prune_cache_via_ttl(self) -> None:
+        if not self._configs.cache.enabled:
+            return
+        if self._configs.cache.ttl < 0:
+            return
+        time_now = get_seconds_now()
+        if time_now - self._time_last_cache_prune >= self._configs.cache.ttl:
+            self._cache.prune()
+            self._time_last_cache_prune = time_now
+
     def request(
         self,
         method: str,
@@ -78,6 +91,8 @@ class Client:
                                                              headers / cookies / auth, etc.
         – send_kwargs: everything passed to session.send(): stream, allow_redirects, etc.
         """
+        if self._configs.cache.automatic_prune_cache:
+            self._prune_cache_via_ttl()
         req: PreparedRequest = self._session_manager.prepare(
             method=method, url=url, **(prepare_kwargs or {})
         )

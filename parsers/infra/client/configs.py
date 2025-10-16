@@ -43,6 +43,7 @@ class NetConfig:
 @dataclass(slots=True)
 class CacheConfig:
     enabled: bool = False
+    automatic_prune_cache: bool = True
     ttl: int = -1  # Immortal cache
     name: str | None = None
     cache_control: bool = False  # Don't respect server cache
