@@ -6,7 +6,7 @@ from endpoints import get_search_groups_url, get_week_schedule_url
 from exceptions import DayNotFoundError, GroupNotFoundError
 from features.base_scraper import BaseScraper
 from furl import furl
-from infra.client import Client, configs
+from infra.client import Client
 from mappers import map_week_schedule, parse_date
 
 
@@ -132,17 +132,3 @@ class DailyScheduleScraper(BaseScraper[DayDTO]):
             if day.date == date:
                 return day
         raise DayNotFoundError(f"Could not find day on date {date}")
-
-
-if __name__ == "__main__":
-    from pprint import pprint
-
-    configs1 = configs.ConfigBox(
-        client=configs.ClientConfig(furl("https://ruz.spbstu.ru/"), "RuzSPbPU"),
-        net=configs.NetConfig(),
-        cache=configs.CacheConfig(enabled=True, ttl=10),
-        cookie=configs.CookieConfig(),
-    )
-    with Client(configs1) as main_client:
-        sc = DailyScheduleScraper(main_client)
-        pprint(sc("5130902/40003", "2025-10-16"))
