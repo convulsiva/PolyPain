@@ -1,9 +1,11 @@
 from telebot import TeleBot, types
+from telebot.apihelper import ApiTelegramException
 
 from ..config import Config
 from ..keyboards import build_admin_kb
 from ..services import admin_service, stats_service
 from .guards import admin_only, is_admin
+
 
 def register_admin_handlers(bot: TeleBot):
     pending_dm_chat: dict[int, int] = {}
@@ -40,6 +42,7 @@ def register_admin_handlers(bot: TeleBot):
             if group_top:
                 top_lines = "\n".join(f"   — <code>{g}</code>: {n}" for g, n in group_top)
                 lines.append("• ТОП групп:\n" + top_lines)
+
             text = "\n".join(lines)
             bot.edit_message_text(
                 text, chat_id=call.message.chat.id, message_id=call.message.message_id,
@@ -197,10 +200,16 @@ def _send_admin_list_page(bot: TeleBot, call: types.CallbackQuery, page: int = 1
         kb.row(types.InlineKeyboardButton("⬅️ Назад в админ-панель", callback_data="admin:back_to_menu"))
         body = "\n".join(body_lines)
         text = f"👥 <b>Администраторы</b> ({len(all_admin_ids)}):\n{body}"
-    bot.edit_message_text(
-        text, chat_id=call.message.chat.id, message_id=call.message.message_id,
-        reply_markup=kb, parse_mode="HTML", disable_web_page_preview=True
-    )
+    try:
+        bot.edit_message_text(
+            text, chat_id=call.message.chat.id, message_id=call.message.message_id,
+            reply_markup=kb, parse_mode="HTML", disable_web_page_preview=True
+        )
+    except ApiTelegramException as e:
+        if "message is not modified" in e.description:
+            pass  # Игнорируем ожидаемую ошибку
+        else:
+            raise
 
 def _human_name(chat) -> str:
     if getattr(chat, "username", None):

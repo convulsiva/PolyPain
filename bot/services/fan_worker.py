@@ -84,7 +84,6 @@ def start_fan_worker(bot: TeleBot) -> threading.Thread:
                     try:
                         msg = random.choice(FAN_JOKES)
                         bot.send_message(cid, msg)
-                        set_fan_last_sent(cid)
                         _inc_daily(cid)
                         time.sleep(random.uniform(0.8, 1.5))
                     except Exception as e:
