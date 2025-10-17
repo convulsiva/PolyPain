@@ -8,3 +8,7 @@ class DayNotFoundError(Exception):
 
 class DateFormatError(Exception):
     pass
+
+
+class TimeFormatError(Exception):
+    pass

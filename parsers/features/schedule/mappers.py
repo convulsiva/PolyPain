@@ -13,7 +13,7 @@ from .dtos import (
     WeekParity,
     WeekScheduleDTO,
 )
-from .exceptions import DateFormatError
+from .exceptions import DateFormatError, TimeFormatError
 
 
 def map_week_schedule(data: dict) -> WeekScheduleDTO:
@@ -26,17 +26,25 @@ def map_week_schedule(data: dict) -> WeekScheduleDTO:
 
 # --- utils ---
 def parse_date(s: str) -> dt.date:
-    formats = ("%Y-%m-%d", "%Y.%m.%d")
-    for fmt in formats:
+    date_formats = ("%Y-%m-%d", "%Y.%m.%d")
+    last_err = None
+    for fmt in date_formats:
         try:
             return dt.datetime.strptime(s, fmt).date()
-        except ValueError:
+        except ValueError as err:
+            last_err = err
             continue
-    raise DateFormatError(f"Wrong date-format for {s}. Use one of {formats} format")
+    raise DateFormatError(
+        f"Wrong date-format for {s}. Use one of {date_formats} format"
+    ) from last_err
 
 
 def _parse_time(s: str) -> dt.time:
-    return dt.datetime.strptime(s, "%H:%M").time()
+    time_format = "%H:%M"
+    try:
+        return dt.datetime.strptime(s, time_format).time()
+    except ValueError as err:
+        raise TimeFormatError(f"Wrong time-format for {s}. Use {time_format} format") from err
 
 
 # --- internal mappers ---
