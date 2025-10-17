@@ -1,5 +1,4 @@
-from infra.client import Client
-from infra.client.configs import ConfigBox
+from infra.client import Client, configs
 
 from .scrapers import (
     DailyScheduleScraper,
@@ -10,8 +9,8 @@ from .scrapers import (
 
 
 class ScheduleParser:
-    def __init__(self, configs: ConfigBox) -> None:
-        self._client = Client(configs)
+    def __init__(self, config_box: configs.ConfigBox) -> None:
+        self._client = Client(config_box)
         self.get_group_id = GroupIdScraper(self._client)
         self.group_exist = GroupExistenceScraper(self._client)
         self.get_week_schedule = WeekScheduleScraper(self._client)
