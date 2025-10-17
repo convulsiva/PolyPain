@@ -8,7 +8,12 @@ schedule_parser = ScheduleParser(
     cfgs.ConfigBox(
         client=cfgs.ClientConfig(furl("https://ruz.spbstu.ru/"), "RuzSPbPU"),
         net=cfgs.NetConfig(),
-        cache=cfgs.CacheConfig(enabled=True, automatic_prune_cache=True, ttl=10),
+        cache=cfgs.CacheConfig(
+            enabled=True,
+            automatic_prune_cache=True,
+            ttl=30 * 60,  # time in seconds
+            name="schedule_parser_cache.sqlite",
+        ),
         cookie=cfgs.CookieConfig(),
     )
 )
