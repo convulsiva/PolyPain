@@ -43,8 +43,9 @@ class NetConfig:
 @dataclass(slots=True)
 class CacheConfig:
     enabled: bool = False
+    ttl: int = -1  # (seconds), -1 = Immortal cache
+    prune_interval: int = 10 * 60  # (seconds)
     automatic_prune_cache: bool = True
-    ttl: int = -1  # Immortal cache
     name: str | None = None
     cache_control: bool = False  # Don't respect server cache
     backend: str = "sqlite"

@@ -68,7 +68,7 @@ class Client:
         if self._configs.cache.ttl < 0:
             return
         time_now = get_seconds_now()
-        if time_now - self._time_last_cache_prune >= self._configs.cache.ttl:
+        if time_now - self._time_last_cache_prune >= self._configs.cache.prune_interval:
             self._cache.prune()
             self._time_last_cache_prune = time_now
 

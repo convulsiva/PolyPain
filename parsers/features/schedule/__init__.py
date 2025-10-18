@@ -11,6 +11,7 @@ schedule_parser = ScheduleParser(
         cache=cfgs.CacheConfig(
             enabled=True,
             automatic_prune_cache=True,
+            prune_interval=10 * 60,
             ttl=30 * 60,  # time in seconds
             name="schedule_parser_cache.sqlite",
         ),
