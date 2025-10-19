@@ -115,7 +115,7 @@ class Client:
         cache_config = self._configs.cache
         ttl = "immortal" if cache_config.ttl < 0 else cache_config.ttl
         return (
-            f"<{self.__class__.__name__} name={self._configs.client.name!r} "
-            f"cache={'on' if cache_config.enabled else 'off'} ttl={ttl} "
-            f"base_url={self._configs.client.base_url}>"
+            f"<{self.__class__.__name__}: "
+            f"cache={'on' if cache_config.enabled else 'off'} "
+            f"ttl={ttl}>"
         )

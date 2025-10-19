@@ -3,19 +3,9 @@ from dataclasses import dataclass, field
 from http.cookiejar import CookieJar
 from os import PathLike
 
-from furl import furl
 from urllib3.util.retry import Retry
 
 from .type_defs import ProxyLike
-
-
-@dataclass(slots=True)
-class ClientConfig:
-    base_url: furl  # Maybe remove from here
-    name: str
-
-    def __post_init__(self):
-        self.base_url = furl(self.base_url).remove(fragment=True, args=True)
 
 
 @dataclass(slots=True)
@@ -60,12 +50,10 @@ class CookieConfig:
 class ConfigBox:
     def __init__(
         self,
-        client: ClientConfig,
         net: NetConfig,
         cache: CacheConfig,
         cookie: CookieConfig,
     ) -> None:
-        self.client = client
         self.net = net
         self.cache = cache
         self.cookie = cookie

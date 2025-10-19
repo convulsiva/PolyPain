@@ -9,17 +9,17 @@ from requests import (
 from requests.adapters import HTTPAdapter
 from requests_cache import CachedSession
 
-from .configs import CacheConfig, ClientConfig, ConfigBox
+from .configs import CacheConfig, ConfigBox
 from .exceptions import SwitchSessionError
 from .type_defs import ProxyLike, SessionLike
 
 
 class SessionFactory:
     @staticmethod
-    def create(client_config: ClientConfig, cache_config: CacheConfig) -> SessionLike:
+    def create(cache_config: CacheConfig) -> SessionLike:
         if cache_config.enabled:
             return CachedSession(
-                cache_name=cache_config.name or client_config.name,
+                cache_name=cache_config.name,
                 backend=cache_config.backend,
                 expire_after=None if cache_config.ttl < 0 else cache_config.ttl,
                 cache_control=cache_config.cache_control,
@@ -30,7 +30,7 @@ class SessionFactory:
 class SessionManager:
     def __init__(self, configs: ConfigBox) -> None:
         self._configs = configs
-        self.session: SessionLike | None = SessionFactory.create(configs.client, configs.cache)
+        self.session: SessionLike | None = SessionFactory.create(configs.cache)
 
     # ---------- lifecycle ----------
     def close(self) -> None:
@@ -48,7 +48,7 @@ class SessionManager:
         # Close current session!
         old = self.session
         try:
-            new = SessionFactory.create(self._configs.client, new_cache_config)
+            new = SessionFactory.create(new_cache_config)
             new.headers.update(old.headers)
             new.proxies.update(old.proxies)
             new.cookies.update(old.cookies)
