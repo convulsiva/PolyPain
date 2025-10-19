@@ -3,5 +3,17 @@ from features.schedule import (
     exceptions as schedule_exceptions,
     schedule_parser,
 )
+from features.song_lyrics import (
+    dtos as song_lyrics_dots,
+    exceptions as song_lyrics_exceptions,
+    song_lyrics_parser,
+)
 
-__all__ = ["schedule_parser", "schedule_exceptions", "schedule_dots"]
+__all__ = [
+    "schedule_parser",
+    "schedule_exceptions",
+    "schedule_dots",
+    "song_lyrics_parser",
+    "song_lyrics_exceptions",
+    "song_lyrics_dots",
+]
