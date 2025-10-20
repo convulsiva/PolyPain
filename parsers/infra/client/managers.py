@@ -30,13 +30,25 @@ class SessionFactory:
 class SessionManager:
     def __init__(self, configs: ConfigBox) -> None:
         self._configs = configs
-        self.session: SessionLike | None = SessionFactory.create(configs.cache)
+        self._session: SessionLike | None = None
+
+    @property
+    def session(self) -> SessionLike:
+        if self._session is None:
+            self._session = SessionFactory.create(self._configs.cache)
+        return self._session
+
+    @session.setter
+    def session(self, new: SessionLike) -> None:
+        if not isinstance(new, SessionLike):
+            raise TypeError(f"Invalid session type: {type(new).__name__}")
+        self._session = new
 
     # ---------- lifecycle ----------
     def close(self) -> None:
-        if self.session is not None:
-            self.session.close()
-            self.session = None
+        if self._session is not None:
+            self._session.close()
+            self._session = None
 
     def __enter__(self) -> "SessionManager":
         return self
@@ -61,8 +73,8 @@ class SessionManager:
                         pool_maxsize=adapter._pool_maxsize,
                     ),
                 )
-            old.close()
             self.session = new
+            old.close()
         except Exception as err:
             self.session = old
             raise SwitchSessionError(
