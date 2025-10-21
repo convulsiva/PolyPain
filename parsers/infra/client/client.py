@@ -99,6 +99,7 @@ class Client:
                                                              headers / cookies / auth, etc.
         – send_kwargs: everything passed to session.send(): stream, allow_redirects, etc.
         """
+        self._ensure_bootstrapped()
         if self._configs.cache.automatic_prune_cache:
             self._prune_cache_via_ttl()
         req: PreparedRequest = self._session_manager.prepare(
@@ -112,7 +113,7 @@ class Client:
     def close(self) -> None:
         if self._bootstrapped:
             self.cache.prune()
-        self.session.close()
+            self.session.close()
 
     def __enter__(self) -> "Client":
         return self
