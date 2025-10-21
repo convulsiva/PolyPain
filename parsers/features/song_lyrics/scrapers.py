@@ -18,9 +18,9 @@ class SearchSongsScraper(BaseScraper[list[SongInfoDTO]]):
         :param search_str:
             The search query string (e.g., a song title or artist name).
         :return:
-            A list of `TextNameDto` instances, where each element contains:
-              - `text_name`: The displayed title of the found text.
-              - `url`: The link to the full text page.
+            A list of `SongInfoDTO` instances, where each element contains:
+              - `name`: The displayed title of the found text.
+              - `slug`: The slug to the full text page.
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
@@ -32,7 +32,7 @@ class SearchSongsScraper(BaseScraper[list[SongInfoDTO]]):
         for result in search_results:
             for tag in result.find_all("a"):
                 name = tag.text
-                slug = furl(tag.get("href")).path.segments[-2]
+                slug = furl(tag.get("href").rstrip("/")).path.segments[-1]
                 text_infos.append(SongInfoDTO(name, slug))
         return text_infos
 
