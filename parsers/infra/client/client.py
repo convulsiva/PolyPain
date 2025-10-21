@@ -18,6 +18,8 @@ from .type_defs import ProxyLike, SessionLike
 class Client:
     def __init__(self, configs: ConfigBox) -> None:
         self._time_last_cache_prune: float = float("-inf")
+        self._bootstrapped = False
+
         self._configs = configs
         self._session_manager = SessionManager(configs)
 
@@ -27,9 +29,9 @@ class Client:
         self._proxies = ProxiesController(self._session_manager, self._configs)
         self._adapters = AdaptersController(self._session_manager, self._configs)
 
-        self._bootstrap()  # Setting a retray policy + cookies + headers (+ user agent)
-
-    def _bootstrap(self) -> None:
+    def _ensure_bootstrapped(self) -> None:
+        if self._bootstrapped:
+            return
         self._cookies.update(self._configs.cookie.initial)
         self._cookies.update(self._configs.cookie.file)
         self._adapters.mount("http://", retry=self._configs.net.retry)
@@ -37,6 +39,7 @@ class Client:
         headers = dict(self._configs.net.headers)
         headers.setdefault("User-Agent", self._configs.net.user_agent or UserAgent().random)
         self._headers.update(headers)
+        self._bootstrapped = True
 
     @property
     def session(self) -> SessionLike:
@@ -44,22 +47,27 @@ class Client:
 
     @property
     def cache(self) -> CacheController:
+        self._ensure_bootstrapped()
         return self._cache
 
     @property
     def cookies(self) -> CookiesController:
+        self._ensure_bootstrapped()
         return self._cookies
 
     @property
     def headers(self) -> HeadersController:
+        self._ensure_bootstrapped()
         return self._headers
 
     @property
     def proxies(self) -> ProxiesController:
+        self._ensure_bootstrapped()
         return self._proxies
 
     @property
     def adapters(self) -> AdaptersController:
+        self._ensure_bootstrapped()
         return self._adapters
 
     def _prune_cache_via_ttl(self) -> None:
@@ -91,6 +99,7 @@ class Client:
                                                              headers / cookies / auth, etc.
         – send_kwargs: everything passed to session.send(): stream, allow_redirects, etc.
         """
+        self._ensure_bootstrapped()
         if self._configs.cache.automatic_prune_cache:
             self._prune_cache_via_ttl()
         req: PreparedRequest = self._session_manager.prepare(
@@ -102,8 +111,9 @@ class Client:
         return resp
 
     def close(self) -> None:
-        self.cache.prune()
-        self.session.close()
+        if self._bootstrapped:
+            self.cache.prune()
+            self.session.close()
 
     def __enter__(self) -> "Client":
         return self
