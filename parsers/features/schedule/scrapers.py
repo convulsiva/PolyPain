@@ -2,8 +2,8 @@ import datetime as dt
 
 from bs4 import BeautifulSoup
 from furl import furl
-from infra.client import Client
 
+from ...infra.client import Client
 from ..base_scraper import BaseScraper
 from .dtos import DayDTO, WeekScheduleDTO
 from .endpoints import get_search_groups_url, get_week_schedule_url

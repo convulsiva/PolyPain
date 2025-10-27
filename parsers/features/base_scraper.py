@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from functools import wraps
 from typing import TypeVar
 
-from infra.client import Client
+from ..infra.client import Client
 
 T = TypeVar("T")
 

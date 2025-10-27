@@ -1,5 +1,4 @@
-from infra.client import configs as cfgs
-
+from ...infra.client import configs as cfgs
 from . import dtos, exceptions
 from .parser import SongLyricsParser
 

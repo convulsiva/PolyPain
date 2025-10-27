@@ -1,5 +1,4 @@
-from infra.client import Client, configs
-
+from ...infra.client import Client, configs
 from .scrapers import (
     DailyScheduleScraper,
     GroupExistenceScraper,
