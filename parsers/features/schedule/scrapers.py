@@ -26,6 +26,8 @@ class GroupIdScraper(BaseScraper[int]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
+        if not name or not name.strip():
+            raise ValueError("Group name cannot be empty")
         resp = self._client.request(method="get", url=get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
@@ -55,6 +57,8 @@ class GroupExistenceScraper(BaseScraper[bool | tuple[str, ...]]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
+        if not name or not name.strip():
+            raise ValueError("Group name cannot be empty")
         resp = self._client.request(method="get", url=get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
