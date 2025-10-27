@@ -24,6 +24,8 @@ class SearchSongsScraper(BaseScraper[list[SongInfoDTO]]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
+        if not search_str or not search_str.strip():
+            raise ValueError("Search_str cannot be empty")
         resp = self._client.request(method="get", url=get_search_texts_url(search_str))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
@@ -51,6 +53,8 @@ class SongLyricsScraper(BaseScraper[SongLyricsDTO]):
         :raises TextNotFoundError: If lyrics or page are not found.
         :raises ScrapingError: On network or parsing errors.
         """
+        if not slug or not slug.strip():
+            raise ValueError("Slug cannot be empty")
         resp = self._client.request(method="get", url=get_text_url(slug))
         if resp.status_code == 404:
             raise TextNotFoundError(f"No song lyrics found for this slug: {slug!r}")
