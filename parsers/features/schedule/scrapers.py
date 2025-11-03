@@ -2,8 +2,8 @@ import datetime as dt
 
 from bs4 import BeautifulSoup
 from furl import furl
-from infra.client import Client
 
+from ...infra.client import Client
 from ..base_scraper import BaseScraper
 from .dtos import DayDTO, WeekScheduleDTO
 from .endpoints import get_search_groups_url, get_week_schedule_url
@@ -26,6 +26,8 @@ class GroupIdScraper(BaseScraper[int]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
+        if not name or not name.strip():
+            raise ValueError("Group name cannot be empty")
         resp = self._client.request(method="get", url=get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")
@@ -55,6 +57,8 @@ class GroupExistenceScraper(BaseScraper[bool | tuple[str, ...]]):
         :raises ScrapingError:
             If a network or parsing error occurs during the request.
         """
+        if not name or not name.strip():
+            raise ValueError("Group name cannot be empty")
         resp = self._client.request(method="get", url=get_search_groups_url(name))
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "lxml")

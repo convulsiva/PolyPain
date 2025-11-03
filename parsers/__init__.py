@@ -1,9 +1,9 @@
-from features.schedule import (
+from .features.schedule import (
     dtos as schedule_dtos,
     exceptions as schedule_exceptions,
     schedule_parser,
 )
-from features.song_lyrics import (
+from .features.song_lyrics import (
     dtos as song_lyrics_dtos,
     exceptions as song_lyrics_exceptions,
     song_lyrics_parser,
