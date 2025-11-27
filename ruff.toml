@@ -13,7 +13,7 @@ exclude = [
 ]
 
 [lint]
-extend-ignore = ["EM101", "EM102"]
+extend-ignore = ["EM101", "EM102", "S311"]
 select = [
   "E",
   "F",
@@ -38,6 +38,7 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 [lint.per-file-ignores]
 "**/__init__.py" = ["F401", "F403"]
 "tests/**.py" = ["S101"]
+"texts.py" = ["E501"]
 
 [format]
 quote-style = "double"
