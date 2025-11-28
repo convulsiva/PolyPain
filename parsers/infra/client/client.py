@@ -18,7 +18,7 @@ from .type_defs import ProxyLike, SessionLike
 class Client:
     def __init__(self, configs: ConfigBox) -> None:
         self._time_last_cache_prune: float = float("-inf")
-        self._bootstrapped = False
+        self.bootstrapped = False
 
         self._configs = configs
         self._session_manager = SessionManager(configs)
@@ -30,7 +30,7 @@ class Client:
         self._adapters = AdaptersController(self._session_manager, self._configs)
 
     def _ensure_bootstrapped(self) -> None:
-        if self._bootstrapped:
+        if self.bootstrapped:
             return
         self._cookies.update(self._configs.cookie.initial)
         self._cookies.update(self._configs.cookie.file)
@@ -39,7 +39,7 @@ class Client:
         headers = dict(self._configs.net.headers)
         headers.setdefault("User-Agent", self._configs.net.user_agent or UserAgent().random)
         self._headers.update(headers)
-        self._bootstrapped = True
+        self.bootstrapped = True
 
     @property
     def session(self) -> SessionLike:
@@ -111,7 +111,7 @@ class Client:
         return resp
 
     def close(self) -> None:
-        if self._bootstrapped:
+        if self.bootstrapped:
             self.cache.prune()
             self.session.close()
 
