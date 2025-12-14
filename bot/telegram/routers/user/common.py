@@ -4,13 +4,10 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.infra.repositories.user import UserRepository
 from bot.services.schedule import ScheduleService
+from bot.telegram.keyboards.main_menu import main_menu_keyboard
 from bot.telegram.keyboards.week import week_keyboard
 from bot.utils.schedule_formatter import format_day
 from bot.utils.week_formatter import format_week
-from parsers.features.schedule.exceptions import (
-    DayNotFoundError,
-    GroupNotFoundError,
-)
 
 router = Router()
 schedule_service = ScheduleService()
@@ -19,12 +16,8 @@ schedule_service = ScheduleService()
 @router.message(CommandStart())
 async def start(message: Message) -> None:
     await message.answer(
-        "👋 <b>PolyPain</b>\n\n"
-        "Я показываю расписание Политеха 📅\n\n"
-        "Команды:\n"
-        "/setgroup — задать группу\n"
-        "/today — расписание на сегодня\n"
-        "/tomorrow — расписание на завтра"
+        "👋 <b>PolyPain</b>\n\nИспользуй кнопки ниже 👇",
+        reply_markup=main_menu_keyboard(),
     )
 
 
@@ -33,22 +26,28 @@ async def set_group(message: Message, users_repo: UserRepository) -> None:
     parts = message.text.split(maxsplit=1)
 
     if len(parts) != 2:
-        await message.answer("❌ Укажи группу.\n\n<code>/setgroup 5130902/40003</code>")
+        await message.answer(
+            "❌ Укажи группу.\n\n<code>/setgroup 5130902/40003</code>",
+            reply_markup=main_menu_keyboard(),
+        )
         return
 
     group = parts[1].strip()
 
-    # базовая валидация
     if len(group) < 5 or " " in group:
-        await message.answer("❌ Некорректный формат группы.")
+        await message.answer(
+            "❌ Некорректный формат группы.",
+            reply_markup=main_menu_keyboard(),
+        )
         return
 
     await users_repo.set_group(message.chat.id, group)
-
-    # 🔥 очищаем кэш расписания для этой группы
     schedule_service.clear_cache_for_group(group)
 
-    await message.answer(f"✅ Группа сохранена: <b>{group}</b>")
+    await message.answer(
+        f"✅ Группа сохранена: <b>{group}</b>",
+        reply_markup=main_menu_keyboard(),
+    )
 
 
 @router.message(Command("today"))
@@ -56,25 +55,23 @@ async def today(message: Message, users_repo: UserRepository) -> None:
     group = await users_repo.get_group(message.chat.id)
 
     if not group:
-        await message.answer("❌ Группа не указана.\n\n<code>/setgroup 5130902/40003</code>")
+        await message.answer(
+            "❌ Сначала задай группу через /setgroup",
+            reply_markup=main_menu_keyboard(),
+        )
         return
 
     try:
         day = await schedule_service.get_today(group)
-        await message.answer(format_day(day))
-
-    except GroupNotFoundError:
-        await message.answer("❌ Группа не найдена.")
-
-    except DayNotFoundError:
-        await message.answer("🎉 <b>Сегодня пар нет</b>")
-
-    except Exception as e:
-        # универсальная обработка "день не найден"
-        if "Could not find day" in str(e):
-            await message.answer("🎉 <b>Сегодня пар нет</b>")
-        else:
-            await message.answer("⚠️ Не удалось получить расписание. Попробуй позже.")
+        await message.answer(
+            "📅 <b>Сегодня</b>\n\n" + format_day(day),
+            reply_markup=main_menu_keyboard(),
+        )
+    except Exception:
+        await message.answer(
+            "⚠️ Не удалось получить расписание.",
+            reply_markup=main_menu_keyboard(),
+        )
 
 
 @router.message(Command("tomorrow"))
@@ -82,24 +79,23 @@ async def tomorrow(message: Message, users_repo: UserRepository) -> None:
     group = await users_repo.get_group(message.chat.id)
 
     if not group:
-        await message.answer("❌ Группа не указана.\n\n<code>/setgroup 5130902/40003</code>")
+        await message.answer(
+            "❌ Сначала задай группу через /setgroup",
+            reply_markup=main_menu_keyboard(),
+        )
         return
 
     try:
         day = await schedule_service.get_tomorrow(group)
-        await message.answer(format_day(day))
-
-    except GroupNotFoundError:
-        await message.answer("❌ Группа не найдена.")
-
-    except DayNotFoundError:
-        await message.answer("🎉 <b>Завтра пар нет</b>")
-
-    except Exception as e:
-        if "Could not find day" in str(e):
-            await message.answer("🎉 <b>Завтра пар нет</b>")
-        else:
-            await message.answer("⚠️ Не удалось получить расписание. Попробуй позже.")
+        await message.answer(
+            "⏭ <b>Завтра</b>\n\n" + format_day(day),
+            reply_markup=main_menu_keyboard(),
+        )
+    except Exception:
+        await message.answer(
+            "⚠️ Не удалось получить расписание.",
+            reply_markup=main_menu_keyboard(),
+        )
 
 
 @router.message(Command("week"))
@@ -107,50 +103,23 @@ async def week(message: Message, users_repo: UserRepository) -> None:
     group = await users_repo.get_group(message.chat.id)
 
     if not group:
-        await message.answer("❌ Группа не указана.\n\n<code>/setgroup 5130902/40003</code>")
+        await message.answer(
+            "❌ Сначала задай группу через /setgroup",
+            reply_markup=main_menu_keyboard(),
+        )
         return
 
-    parts = message.text.split(maxsplit=1)
-    offset = 0
-
-    if len(parts) == 2:
-        arg = parts[1].lower()
-
-        if arg == "next":
-            offset = 1
-        elif arg == "prev":
-            offset = -1
-        else:
-            await message.answer(
-                "❌ Неверный аргумент.\n\n"
-                "Используй:\n"
-                "<code>/week</code>\n"
-                "<code>/week next</code>\n"
-                "<code>/week prev</code>"
-            )
-            return
-
     try:
-        days = await schedule_service.get_week(group, offset)
+        days = await schedule_service.get_week(group)
 
         if not days:
             await message.answer("🎉 <b>На этой неделе пар нет</b>")
             return
 
-        title = "📅 <b>Текущая неделя</b>"
-        if offset == 1:
-            title = "➡️ <b>Следующая неделя</b>"
-        elif offset == -1:
-            title = "⬅️ <b>Предыдущая неделя</b>"
-
         await message.answer(
-            f"{title}\n\n{format_week(days)}",
-            reply_markup=week_keyboard(offset),
+            "📆 <b>Текущая неделя</b>\n\n" + format_week(days),
+            reply_markup=week_keyboard(0),  # ✅ INLINE
         )
-
-    except GroupNotFoundError:
-        await message.answer("❌ Группа не найдена.")
-
     except Exception:
         await message.answer("⚠️ Не удалось получить расписание недели.")
 
@@ -178,10 +147,11 @@ async def week_callback(
         if not days:
             text = "🎉 <b>На этой неделе пар нет</b>"
         else:
-            title = "📅 <b>Текущая неделя</b>"
-            if offset > 0:
+            if offset == 0:
+                title = "📆 <b>Текущая неделя</b>"
+            elif offset > 0:
                 title = "➡️ <b>Следующая неделя</b>"
-            elif offset < 0:
+            else:
                 title = "⬅️ <b>Предыдущая неделя</b>"
 
             text = f"{title}\n\n{format_week(days)}"
@@ -193,9 +163,59 @@ async def week_callback(
         await callback.answer()
 
     except Exception:
-        await callback.answer("Ошибка при получении расписания", show_alert=True)
+        await callback.answer(
+            "Ошибка при получении расписания",
+            show_alert=True,
+        )
 
 
-@router.message(Command("ping"))
-async def ping(message: Message) -> None:
-    await message.answer("🏓 pong")
+@router.message()
+async def reply_menu_handler(
+    message: Message,
+    users_repo: UserRepository,
+) -> None:
+    text = message.text
+
+    if text not in {"📅 Сегодня", "⏭ Завтра", "📆 Неделя"}:
+        return
+
+    group = await users_repo.get_group(message.chat.id)
+    if not group:
+        await message.answer(
+            "❌ Сначала задай группу через /setgroup",
+            reply_markup=main_menu_keyboard(),
+        )
+        return
+
+    try:
+        if text == "📅 Сегодня":
+            day = await schedule_service.get_today(group)
+            await message.answer(
+                "📅 <b>Сегодня</b>\n\n" + format_day(day),
+                reply_markup=main_menu_keyboard(),
+            )
+
+        elif text == "⏭ Завтра":
+            day = await schedule_service.get_tomorrow(group)
+            await message.answer(
+                "⏭ <b>Завтра</b>\n\n" + format_day(day),
+                reply_markup=main_menu_keyboard(),
+            )
+
+        elif text == "📆 Неделя":
+            days = await schedule_service.get_week(group)
+
+            if not days:
+                await message.answer("🎉 <b>На этой неделе пар нет</b>")
+                return
+
+            await message.answer(
+                "📆 <b>Текущая неделя</b>\n\n" + format_week(days),
+                reply_markup=week_keyboard(0),  # ✅ INLINE
+            )
+
+    except Exception:
+        await message.answer(
+            "⚠️ Не удалось получить расписание.",
+            reply_markup=main_menu_keyboard(),
+        )
