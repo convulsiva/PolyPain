@@ -1,29 +1,32 @@
-import logging
+import asyncio
 
-import telebot
+from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 
-from . import handlers
-from .admin_panel.admin_panel import register_admin_handlers
-from .config import Config
-from .logging_conf import setup_logging
-from .services import db_service  # import db
-from .services.fan_worker import start_fan_worker
+from bot.config import Config
+from bot.infra.db import close_db, init_db
+from bot.telegram.routers.user.common import router as user_common
 
-db_service.init_db()
 
-setup_logging()
-logger = logging.getLogger(__name__)
+async def main():
+    print("🚀 Bot starting (db mode)")
 
-bot = telebot.TeleBot(Config.BOT_TOKEN)
+    await init_db()
 
-register_admin_handlers(bot)
-handlers.register_handlers(bot)
+    bot = Bot(
+        token=Config.BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
 
-start_fan_worker(bot)
+    dp = Dispatcher()
+    dp.include_router(user_common)
+
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await close_db()
+
 
 if __name__ == "__main__":
-    try:
-        logger.info("🚀 Бот запускается...")
-        bot.infinity_polling(timeout=10, long_polling_timeout=5)
-    except Exception:
-        logger.exception("❌ Критическая ошибка при работе бота")
+    asyncio.run(main())
