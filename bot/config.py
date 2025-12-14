@@ -27,6 +27,7 @@ class Config:
     DATE_FORMAT: str = os.getenv("DATE_FORMAT", "%Y-%m-%d %H:%M:%S")
 
     ADMIN_IDS: list[int] | None = None
+    NOTIFY_BEFORE_MINUTES: int = int(os.getenv("NOTIFY_BEFORE_MINUTES", "60"))
 
     def __post_init__(self) -> None:
         raw_admins = os.getenv("ADMIN_IDS", "")

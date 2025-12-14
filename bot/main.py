@@ -9,6 +9,7 @@ from bot.config import config
 from bot.infra.db import close_db, init_db
 from bot.infra.repositories.admin import AdminRepository
 from bot.infra.repositories.user import UserRepository
+from bot.telegram.background.notification_worker import start_notification_worker
 from bot.telegram.middlewares.logging import LoggingMiddleware
 from bot.telegram.middlewares.user_context import UserContextMiddleware
 from bot.telegram.routers.admin.broadcast import router as admin_broadcast
@@ -48,6 +49,7 @@ async def main() -> None:
 
     # --- repositories ---
     users_repo = UserRepository()
+    asyncio.create_task(start_notification_worker(bot, users_repo))
 
     # --- middlewares ---
     dp.message.middleware(LoggingMiddleware())
