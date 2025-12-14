@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, Message
 
@@ -169,15 +169,12 @@ async def week_callback(
         )
 
 
-@router.message()
+@router.message(F.text.in_({"📅 Сегодня", "⏭ Завтра", "📆 Неделя"}))
 async def reply_menu_handler(
     message: Message,
     users_repo: UserRepository,
 ) -> None:
     text = message.text
-
-    if text not in {"📅 Сегодня", "⏭ Завтра", "📆 Неделя"}:
-        return
 
     group = await users_repo.get_group(message.chat.id)
     if not group:

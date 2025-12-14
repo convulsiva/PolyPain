@@ -38,3 +38,9 @@ class UserRepository:
     async def get_group(self, chat_id: int) -> str | None:
         user = await User.filter(id=chat_id).first()
         return user.group if user else None
+
+    async def count_all(self) -> int:
+        return await User.all().count()
+
+    async def count_with_group(self) -> int:
+        return await User.filter(group__not_isnull=True).count()

@@ -8,6 +8,10 @@ from bot.config import config
 from bot.infra.db import close_db, init_db
 from bot.infra.repositories.user import UserRepository
 from bot.telegram.middlewares.user_context import UserContextMiddleware
+
+# --- Добавляем админ-роутеры ---
+from bot.telegram.routers.admin.panel import router as admin_panel
+from bot.telegram.routers.admin.stats import router as admin_stats
 from bot.telegram.routers.user.common import router as user_common
 
 
@@ -34,12 +38,13 @@ async def main() -> None:
 
     # --- middlewares ---
     user_middleware = UserContextMiddleware(users_repo)
-
     dp.message.middleware(user_middleware)
     dp.callback_query.middleware(user_middleware)
 
     # --- routers ---
     dp.include_router(user_common)
+    dp.include_router(admin_panel)  # Подключаем админ-роутер
+    dp.include_router(admin_stats)  # Подключаем админ-статистику
 
     try:
         await dp.start_polling(bot)
