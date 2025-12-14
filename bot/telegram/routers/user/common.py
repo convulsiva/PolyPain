@@ -5,6 +5,7 @@ from aiogram.types import Message
 from bot.infra.repositories.user import UserRepository
 from bot.services.schedule import ScheduleService
 from bot.utils.schedule_formatter import format_day
+from bot.utils.week_formatter import format_week
 from parsers.features.schedule.exceptions import (
     DayNotFoundError,
     GroupNotFoundError,
@@ -93,6 +94,56 @@ async def tomorrow(message: Message, users_repo: UserRepository) -> None:
             await message.answer("🎉 <b>Завтра пар нет</b>")
         else:
             await message.answer("⚠️ Не удалось получить расписание. Попробуй позже.")
+
+
+@router.message(Command("week"))
+async def week(message: Message, users_repo: UserRepository) -> None:
+    group = await users_repo.get_group(message.chat.id)
+
+    if not group:
+        await message.answer("❌ Группа не указана.\n\n<code>/setgroup 5130902/40003</code>")
+        return
+
+    parts = message.text.split(maxsplit=1)
+    offset = 0
+
+    if len(parts) == 2:
+        arg = parts[1].lower()
+
+        if arg == "next":
+            offset = 1
+        elif arg == "prev":
+            offset = -1
+        else:
+            await message.answer(
+                "❌ Неверный аргумент.\n\n"
+                "Используй:\n"
+                "<code>/week</code>\n"
+                "<code>/week next</code>\n"
+                "<code>/week prev</code>"
+            )
+            return
+
+    try:
+        days = schedule_service.get_week(group, offset)
+
+        if not days:
+            await message.answer("🎉 <b>На этой неделе пар нет</b>")
+            return
+
+        title = "📅 <b>Текущая неделя</b>"
+        if offset == 1:
+            title = "➡️ <b>Следующая неделя</b>"
+        elif offset == -1:
+            title = "⬅️ <b>Предыдущая неделя</b>"
+
+        await message.answer(f"{title}\n\n{format_week(days)}")
+
+    except GroupNotFoundError:
+        await message.answer("❌ Группа не найдена.")
+
+    except Exception:
+        await message.answer("⚠️ Не удалось получить расписание недели.")
 
 
 @router.message(Command("ping"))
