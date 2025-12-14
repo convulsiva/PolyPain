@@ -33,7 +33,10 @@ async def main() -> None:
     users_repo = UserRepository()
 
     # --- middlewares ---
-    dp.message.middleware(UserContextMiddleware(users_repo))
+    user_middleware = UserContextMiddleware(users_repo)
+
+    dp.message.middleware(user_middleware)
+    dp.callback_query.middleware(user_middleware)
 
     # --- routers ---
     dp.include_router(user_common)

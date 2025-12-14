@@ -1,18 +1,57 @@
+import asyncio
 import datetime as dt
 
+from bot.utils.ttl_cache import TTLCache
 from parsers.features.schedule import schedule_parser
+
+CACHE_TTL_SECONDS = 300  # 5 минут
 
 
 class ScheduleService:
-    def get_today(self, group: str):
+    def __init__(self) -> None:
+        self._cache = TTLCache(CACHE_TTL_SECONDS)
+
+    async def get_today(self, group: str):
+        key = ("today", group)
+        cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+
         today = dt.date.today()
-        return schedule_parser.get_daily_schedule(group, today)
+        result = await asyncio.to_thread(
+            schedule_parser.get_daily_schedule,
+            group,
+            today,
+        )
+        self._cache.set(key, result)
+        return result
 
-    def get_tomorrow(self, group: str):
+    async def get_tomorrow(self, group: str):
+        key = ("tomorrow", group)
+        cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+
         tomorrow = dt.date.today() + dt.timedelta(days=1)
-        return schedule_parser.get_daily_schedule(group, tomorrow)
+        result = await asyncio.to_thread(
+            schedule_parser.get_daily_schedule,
+            group,
+            tomorrow,
+        )
+        self._cache.set(key, result)
+        return result
 
-    def get_week(self, group: str, offset_weeks: int = 0):
+    async def get_week(self, group: str, offset_weeks: int = 0):
+        key = ("week", group, offset_weeks)
+        cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+
         base_date = dt.date.today() + dt.timedelta(weeks=offset_weeks)
-        week = schedule_parser.get_week_schedule(group, base_date)
+        week = await asyncio.to_thread(
+            schedule_parser.get_week_schedule,
+            group,
+            base_date,
+        )
+        self._cache.set(key, week.days)
         return week.days

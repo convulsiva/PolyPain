@@ -1,9 +1,10 @@
 from aiogram import Router
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 
 from bot.infra.repositories.user import UserRepository
 from bot.services.schedule import ScheduleService
+from bot.telegram.keyboards.week import week_keyboard
 from bot.utils.schedule_formatter import format_day
 from bot.utils.week_formatter import format_week
 from parsers.features.schedule.exceptions import (
@@ -54,7 +55,7 @@ async def today(message: Message, users_repo: UserRepository) -> None:
         return
 
     try:
-        day = schedule_service.get_today(group)
+        day = await schedule_service.get_today(group)
         await message.answer(format_day(day))
 
     except GroupNotFoundError:
@@ -80,7 +81,7 @@ async def tomorrow(message: Message, users_repo: UserRepository) -> None:
         return
 
     try:
-        day = schedule_service.get_tomorrow(group)
+        day = await schedule_service.get_tomorrow(group)
         await message.answer(format_day(day))
 
     except GroupNotFoundError:
@@ -125,7 +126,7 @@ async def week(message: Message, users_repo: UserRepository) -> None:
             return
 
     try:
-        days = schedule_service.get_week(group, offset)
+        days = await schedule_service.get_week(group, offset)
 
         if not days:
             await message.answer("🎉 <b>На этой неделе пар нет</b>")
@@ -137,13 +138,57 @@ async def week(message: Message, users_repo: UserRepository) -> None:
         elif offset == -1:
             title = "⬅️ <b>Предыдущая неделя</b>"
 
-        await message.answer(f"{title}\n\n{format_week(days)}")
+        await message.answer(
+            f"{title}\n\n{format_week(days)}",
+            reply_markup=week_keyboard(offset),
+        )
 
     except GroupNotFoundError:
         await message.answer("❌ Группа не найдена.")
 
     except Exception:
         await message.answer("⚠️ Не удалось получить расписание недели.")
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("week:"))
+async def week_callback(
+    callback: CallbackQuery,
+    users_repo: UserRepository,
+) -> None:
+    group = await users_repo.get_group(callback.message.chat.id)
+
+    if not group:
+        await callback.answer("Группа не указана", show_alert=True)
+        return
+
+    try:
+        offset = int(callback.data.split(":")[1])
+    except ValueError:
+        await callback.answer("Некорректные данные", show_alert=True)
+        return
+
+    try:
+        days = await schedule_service.get_week(group, offset)
+
+        if not days:
+            text = "🎉 <b>На этой неделе пар нет</b>"
+        else:
+            title = "📅 <b>Текущая неделя</b>"
+            if offset > 0:
+                title = "➡️ <b>Следующая неделя</b>"
+            elif offset < 0:
+                title = "⬅️ <b>Предыдущая неделя</b>"
+
+            text = f"{title}\n\n{format_week(days)}"
+
+        await callback.message.edit_text(
+            text,
+            reply_markup=week_keyboard(offset),
+        )
+        await callback.answer()
+
+    except Exception:
+        await callback.answer("Ошибка при получении расписания", show_alert=True)
 
 
 @router.message(Command("ping"))
