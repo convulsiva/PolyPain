@@ -6,8 +6,11 @@ from aiogram.enums import ParseMode
 
 from bot.config import config
 from bot.infra.db import close_db, init_db
+from bot.infra.repositories.admin import AdminRepository
 from bot.infra.repositories.user import UserRepository
 from bot.telegram.middlewares.user_context import UserContextMiddleware
+from bot.telegram.routers.admin.broadcast import router as admin_broadcast
+from bot.telegram.routers.admin.manage_admins import router as admin_manage
 
 # --- Добавляем админ-роутеры ---
 from bot.telegram.routers.admin.panel import router as admin_panel
@@ -43,8 +46,14 @@ async def main() -> None:
 
     # --- routers ---
     dp.include_router(user_common)
-    dp.include_router(admin_panel)  # Подключаем админ-роутер
-    dp.include_router(admin_stats)  # Подключаем админ-статистику
+    dp.include_router(admin_panel)
+    dp.include_router(admin_stats)
+    dp.include_router(admin_broadcast)
+    dp.include_router(admin_manage)
+
+    admin_repo = AdminRepository()
+    for admin_id in config.ADMIN_IDS:
+        await admin_repo.add_admin(admin_id)
 
     try:
         await dp.start_polling(bot)

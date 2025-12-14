@@ -1,9 +1,10 @@
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
 
-from bot.config import config
+from bot.infra.repositories.admin import AdminRepository
 
 
 class IsAdmin(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        return message.from_user.id in config.ADMIN_IDS
+        repo = AdminRepository()
+        return await repo.is_admin(message.from_user.id)

@@ -44,3 +44,6 @@ class UserRepository:
 
     async def count_with_group(self) -> int:
         return await User.filter(group__not_isnull=True).count()
+
+    async def get_all_chat_ids(self) -> list[int]:
+        return await User.all().values_list("id", flat=True)
