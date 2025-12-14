@@ -2,12 +2,15 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
+from bot.services.schedule import ScheduleService
 from bot.telegram.filters.is_admin import IsAdmin
 from bot.telegram.keyboards.admin import admin_keyboard
 from bot.telegram.keyboards.main_menu import main_menu_keyboard
 
 router = Router()
 router.message.filter(IsAdmin())
+
+schedule_service = ScheduleService()
 
 
 @router.message(Command("admin"))
@@ -25,3 +28,10 @@ async def admin_back(message: Message) -> None:
         "↩️ Возврат в главное меню",
         reply_markup=main_menu_keyboard(),
     )
+
+
+@router.message(F.text == "🧹 Очистить кэш")
+async def clear_cache(message: Message) -> None:
+    schedule_service.clear_cache()
+
+    await message.answer("🧹 <b>Кэш расписаний очищен</b>")

@@ -11,6 +11,7 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
             [
                 KeyboardButton(text="📆 Неделя"),
             ],
+            [KeyboardButton(text="🔔 Уведомления")],
         ],
         resize_keyboard=True,
         persistent=True,

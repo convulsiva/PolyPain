@@ -47,3 +47,16 @@ class UserRepository:
 
     async def get_all_chat_ids(self) -> list[int]:
         return await User.all().values_list("id", flat=True)
+
+    async def is_notify_enabled(self, chat_id: int) -> bool:
+        user = await User.filter(id=chat_id).first()
+        return bool(user and user.notify_enabled)
+
+    async def set_notify(self, chat_id: int, enabled: bool) -> None:
+        await User.filter(id=chat_id).update(notify_enabled=enabled)
+
+    async def get_all_with_notifications(self) -> list[User]:
+        return await User.filter(
+            notify_enabled=True,
+            group__not_isnull=True,
+        )

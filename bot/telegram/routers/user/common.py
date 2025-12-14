@@ -216,3 +216,20 @@ async def reply_menu_handler(
             "⚠️ Не удалось получить расписание.",
             reply_markup=main_menu_keyboard(),
         )
+
+
+@router.message(lambda m: m.text == "🔔 Уведомления")
+async def toggle_notifications(
+    message: Message,
+    users_repo: UserRepository,
+) -> None:
+    enabled = await users_repo.is_notify_enabled(message.chat.id)
+
+    await users_repo.set_notify(message.chat.id, not enabled)
+
+    status = "✅ включены" if not enabled else "❌ выключены"
+
+    await message.answer(
+        f"🔔 Уведомления о начале пар {status}",
+        reply_markup=main_menu_keyboard(),
+    )
