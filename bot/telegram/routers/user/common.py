@@ -38,11 +38,16 @@ async def set_group(message: Message, users_repo: UserRepository) -> None:
 
     group = parts[1].strip()
 
+    # базовая валидация
     if len(group) < 5 or " " in group:
         await message.answer("❌ Некорректный формат группы.")
         return
 
     await users_repo.set_group(message.chat.id, group)
+
+    # 🔥 очищаем кэш расписания для этой группы
+    schedule_service.clear_cache_for_group(group)
+
     await message.answer(f"✅ Группа сохранена: <b>{group}</b>")
 
 

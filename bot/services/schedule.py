@@ -11,6 +11,14 @@ class ScheduleService:
     def __init__(self) -> None:
         self._cache = TTLCache(CACHE_TTL_SECONDS)
 
+    def clear_cache_for_group(self, group: str) -> None:
+        keys_to_delete = [
+            key for key in self._cache._data if isinstance(key, tuple) and key[1] == group
+        ]
+
+        for key in keys_to_delete:
+            self._cache._data.pop(key, None)
+
     async def get_today(self, group: str):
         key = ("today", group)
         cached = self._cache.get(key)
