@@ -3,15 +3,16 @@ from http.cookiejar import CookieJar, MozillaCookieJar
 from os import PathLike
 from pathlib import Path
 
-from configs import CacheConfig, ConfigBox
-from exceptions import CacheDisabledError
-from managers import SessionManager
 from requests.adapters import HTTPAdapter
 from requests.cookies import RequestsCookieJar
 from requests.structures import CaseInsensitiveDict
 from requests.utils import dict_from_cookiejar
-from type_defs import CookiesLike, ProxyLike, SessionLike
 from urllib3.util.retry import Retry
+
+from .configs import CacheConfig, ConfigBox
+from .exceptions import CacheDisabledError
+from .managers import SessionManager
+from .type_defs import CookiesLike, ProxyLike, SessionLike
 
 
 class BaseController:

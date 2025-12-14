@@ -1,0 +1,2 @@
+class TextNotFoundError(Exception):
+    pass

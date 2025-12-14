@@ -3,18 +3,9 @@ from dataclasses import dataclass, field
 from http.cookiejar import CookieJar
 from os import PathLike
 
-from furl import furl
-from type_defs import ProxyLike
 from urllib3.util.retry import Retry
 
-
-@dataclass(slots=True)
-class ClientConfig:
-    base_url: furl
-    name: str
-
-    def __post_init__(self):
-        self.base_url = furl(self.base_url).remove(fragment=True, args=True)
+from .type_defs import ProxyLike
 
 
 @dataclass(slots=True)
@@ -42,7 +33,9 @@ class NetConfig:
 @dataclass(slots=True)
 class CacheConfig:
     enabled: bool = False
-    ttl: int = -1  # Immortal cache
+    ttl: int = -1  # (seconds), -1 = Immortal cache
+    prune_interval: int = 10 * 60  # (seconds)
+    automatic_prune_cache: bool = True
     name: str | None = None
     cache_control: bool = False  # Don't respect server cache
     backend: str = "sqlite"
@@ -57,12 +50,10 @@ class CookieConfig:
 class ConfigBox:
     def __init__(
         self,
-        client: ClientConfig,
         net: NetConfig,
         cache: CacheConfig,
         cookie: CookieConfig,
     ) -> None:
-        self.client = client
         self.net = net
         self.cache = cache
         self.cookie = cookie

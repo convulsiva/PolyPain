@@ -1,7 +1,5 @@
 from collections.abc import Mapping
 
-from configs import CacheConfig, ClientConfig, ConfigBox
-from exceptions import SwitchSessionError
 from requests import (
     PreparedRequest,
     Request,
@@ -10,15 +8,18 @@ from requests import (
 )
 from requests.adapters import HTTPAdapter
 from requests_cache import CachedSession
-from type_defs import ProxyLike, SessionLike
+
+from .configs import CacheConfig, ConfigBox
+from .exceptions import SwitchSessionError
+from .type_defs import ProxyLike, SessionLike
 
 
 class SessionFactory:
     @staticmethod
-    def create(client_config: ClientConfig, cache_config: CacheConfig) -> SessionLike:
+    def create(cache_config: CacheConfig) -> SessionLike:
         if cache_config.enabled:
             return CachedSession(
-                cache_name=cache_config.name or client_config.name,
+                cache_name=cache_config.name,
                 backend=cache_config.backend,
                 expire_after=None if cache_config.ttl < 0 else cache_config.ttl,
                 cache_control=cache_config.cache_control,
@@ -29,13 +30,25 @@ class SessionFactory:
 class SessionManager:
     def __init__(self, configs: ConfigBox) -> None:
         self._configs = configs
-        self.session: SessionLike | None = SessionFactory.create(configs.client, configs.cache)
+        self._session: SessionLike | None = None
+
+    @property
+    def session(self) -> SessionLike:
+        if self._session is None:
+            self._session = SessionFactory.create(self._configs.cache)
+        return self._session
+
+    @session.setter
+    def session(self, new: SessionLike) -> None:
+        if not isinstance(new, SessionLike):
+            raise TypeError(f"Invalid session type: {type(new).__name__}")
+        self._session = new
 
     # ---------- lifecycle ----------
     def close(self) -> None:
-        if self.session is not None:
-            self.session.close()
-            self.session = None
+        if self._session is not None:
+            self._session.close()
+            self._session = None
 
     def __enter__(self) -> "SessionManager":
         return self
@@ -47,7 +60,7 @@ class SessionManager:
         # Close current session!
         old = self.session
         try:
-            new = SessionFactory.create(self._configs.client, new_cache_config)
+            new = SessionFactory.create(new_cache_config)
             new.headers.update(old.headers)
             new.proxies.update(old.proxies)
             new.cookies.update(old.cookies)
@@ -60,8 +73,8 @@ class SessionManager:
                         pool_maxsize=adapter._pool_maxsize,
                     ),
                 )
-            old.close()
             self.session = new
+            old.close()
         except Exception as err:
             self.session = old
             raise SwitchSessionError(
