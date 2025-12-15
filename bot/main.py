@@ -1,29 +1,78 @@
+import asyncio
 import logging
 
-import telebot
+from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 
-from . import handlers
-from .admin_panel.admin_panel import register_admin_handlers
-from .config import Config
-from .logging_conf import setup_logging
-from .services import db_service  # import db
-from .services.fan_worker import start_fan_worker
+from bot.config import config
+from bot.infra.db import close_db, init_db
+from bot.infra.repositories.admin import AdminRepository
+from bot.infra.repositories.user import UserRepository
+from bot.telegram.background.notification_worker import start_notification_worker
+from bot.telegram.middlewares.logging import LoggingMiddleware
+from bot.telegram.middlewares.user_context import UserContextMiddleware
+from bot.telegram.routers.admin.broadcast import router as admin_broadcast
+from bot.telegram.routers.admin.manage_admins import router as admin_manage
+from bot.telegram.routers.admin.panel import router as admin_panel
+from bot.telegram.routers.admin.stats import router as admin_stats
+from bot.telegram.routers.user.common import router as user_common
+from bot.utils.logging_conf import setup_logging
 
-db_service.init_db()
-
+# --- logging ---
 setup_logging()
 logger = logging.getLogger(__name__)
 
-bot = telebot.TeleBot(Config.BOT_TOKEN)
 
-register_admin_handlers(bot)
-handlers.register_handlers(bot)
+async def main() -> None:
+    logger.info("🚀 PolyPain bot starting...")
 
-start_fan_worker(bot)
+    # --- init db ---
+    await init_db()
+
+    # --- bootstrap admins from .env ---
+    admin_repo = AdminRepository()
+    for admin_id in config.ADMIN_IDS:
+        await admin_repo.add_admin(admin_id)
+
+    # --- bot ---
+    if not config.BOT_TOKEN:
+        raise RuntimeError("BOT_TOKEN is not set in environment")
+
+    bot = Bot(
+        token=config.BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
+
+    # --- dispatcher ---
+    dp = Dispatcher()
+
+    # --- repositories ---
+    users_repo = UserRepository()
+    asyncio.create_task(start_notification_worker(bot, users_repo))
+
+    # --- middlewares ---
+    dp.message.middleware(LoggingMiddleware())
+    dp.callback_query.middleware(LoggingMiddleware())
+
+    dp.message.middleware(UserContextMiddleware(users_repo))
+    dp.callback_query.middleware(UserContextMiddleware(users_repo))
+
+    # --- routers ---
+    dp.include_router(user_common)
+
+    dp.include_router(admin_panel)
+    dp.include_router(admin_stats)
+    dp.include_router(admin_broadcast)
+    dp.include_router(admin_manage)
+
+    try:
+        await dp.start_polling(bot)
+    except Exception:
+        logger.exception("🔥 Unhandled exception in polling")
+    finally:
+        await close_db()
+
 
 if __name__ == "__main__":
-    try:
-        logger.info("🚀 Бот запускается...")
-        bot.infinity_polling(timeout=10, long_polling_timeout=5)
-    except Exception:
-        logger.exception("❌ Критическая ошибка при работе бота")
+    asyncio.run(main())
